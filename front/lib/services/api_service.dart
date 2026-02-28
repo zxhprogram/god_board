@@ -418,4 +418,84 @@ class ApiService {
       return {'code': 500, 'message': '请求失败: $e', 'data': null};
     }
   }
+
+  // 获取 Redis 配置
+  static Future<Map<String, dynamic>> getRedisConfig() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/configs/redis'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 保存 Redis 配置
+  static Future<Map<String, dynamic>> saveRedisConfig({
+    required String host,
+    required int port,
+    required bool isCluster,
+    required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/configs/redis'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'host': host,
+          'port': port,
+          'is_cluster': isCluster,
+          'password': password,
+        }),
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 获取 MySQL 配置
+  static Future<Map<String, dynamic>> getMySQLConfig() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/configs/mysql'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 保存 MySQL 配置
+  static Future<Map<String, dynamic>> saveMySQLConfig({
+    required String host,
+    required int port,
+    required String username,
+    required String password,
+    required String database,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/configs/mysql'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'host': host,
+          'port': port,
+          'username': username,
+          'password': password,
+          'database': database,
+        }),
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
 }

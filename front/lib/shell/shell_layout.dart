@@ -93,6 +93,13 @@ class _ShellLayoutState extends State<ShellLayout> {
                                   context.go('/newland-gateway');
                                 },
                               ),
+                              MenuButton(
+                                leading: const Icon(Icons.storage),
+                                child: const Text('Storage Config'),
+                                onPressed: (ctx) {
+                                  context.go('/storage-config');
+                                },
+                              ),
                               const MenuDivider(),
                               MenuButton(
                                 leading: const Icon(Icons.person),

@@ -43,6 +43,12 @@ func SetupRouter() *gin.Engine {
 	r.GET("/api/configs/newland/9895", handlers.HandleGetNewland9895Config)
 	r.POST("/api/configs/newland/9895", handlers.HandleSaveNewland9895Config)
 
+	// 存储服务器配置路由
+	r.GET("/api/configs/redis", handlers.GetRedisConfig)
+	r.POST("/api/configs/redis", handlers.SaveRedisConfig)
+	r.GET("/api/configs/mysql", handlers.GetMySQLConfig)
+	r.POST("/api/configs/mysql", handlers.SaveMySQLConfig)
+
 	return r
 }
 

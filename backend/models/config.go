@@ -70,3 +70,26 @@ type Newland9895Config struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+// RedisConfig 存储 Redis 服务配置
+type RedisConfig struct {
+	ID       uint   `json:"id" gorm:"primaryKey"`
+	Host     string `json:"host" gorm:"not null"`
+	Port     int    `json:"port" gorm:"not null"`
+	IsCluster bool  `json:"is_cluster" gorm:"default:false"`
+	Password string `json:"password"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// MySQLConfig 存储 MySQL 服务配置
+type MySQLConfig struct {
+	ID         uint   `json:"id" gorm:"primaryKey"`
+	Host       string `json:"host" gorm:"not null"`
+	Port       int    `json:"port" gorm:"not null"`
+	Username   string `json:"username" gorm:"not null"`
+	Password   string `json:"password" gorm:"not null"`
+	Database   string `json:"database" gorm:"not null"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}

@@ -10,6 +10,7 @@ import 'pages/server_settings_page.dart';
 import 'pages/newland_gateway_page.dart';
 import 'pages/inspection_page.dart';
 import 'pages/config_insight_page.dart';
+import 'pages/storage_config_page.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -90,6 +91,10 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/config-insight',
           builder: (context, state) => const ConfigInsightPage(),
+        ),
+        GoRoute(
+          path: '/storage-config',
+          builder: (context, state) => const StorageConfigPage(),
         ),
       ],
     ),
