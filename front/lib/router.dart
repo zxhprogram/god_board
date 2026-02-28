@@ -11,6 +11,10 @@ import 'pages/newland_gateway_page.dart';
 import 'pages/inspection_page.dart';
 import 'pages/config_insight_page.dart';
 import 'pages/storage_config_page.dart';
+import 'pages/nacos/nacos_shell.dart';
+import 'pages/nacos/namespace_detail_page.dart';
+import 'pages/nacos/config_detail_page.dart';
+import 'pages/nacos/service_detail_page.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -95,6 +99,55 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/storage-config',
           builder: (context, state) => const StorageConfigPage(),
+        ),
+        // Nacos 路由使用嵌套 ShellRoute
+        ShellRoute(
+          builder: (context, state, child) {
+            return NacosShell(child: child);
+          },
+          routes: [
+            GoRoute(
+              path: '/nacos',
+              builder: (context, state) =>
+                  const Center(child: Text('请选择一个 Namespace 查看详情')),
+            ),
+            GoRoute(
+              path: '/nacos/namespace/:namespaceId',
+              builder: (context, state) {
+                final namespaceId = state.pathParameters['namespaceId']!;
+                return NacosNamespaceDetailPage(namespaceId: namespaceId);
+              },
+            ),
+            GoRoute(
+              path: '/nacos/namespace/:namespaceId/config/:group/:dataId',
+              builder: (context, state) {
+                final namespaceId = state.pathParameters['namespaceId']!;
+                final group = state.pathParameters['group']!;
+                final dataId = state.pathParameters['dataId']!;
+                return NacosConfigDetailPage(
+                  namespaceId: namespaceId,
+                  group: group,
+                  dataId: dataId,
+                );
+              },
+            ),
+            GoRoute(
+              path:
+                  '/nacos/namespace/:namespaceId/config/:group/:dataId/service/:serviceName',
+              builder: (context, state) {
+                final namespaceId = state.pathParameters['namespaceId']!;
+                final group = state.pathParameters['group']!;
+                final dataId = state.pathParameters['dataId']!;
+                final serviceName = state.pathParameters['serviceName']!;
+                return NacosServiceDetailPage(
+                  namespaceId: namespaceId,
+                  group: group,
+                  dataId: dataId,
+                  serviceName: serviceName,
+                );
+              },
+            ),
+          ],
         ),
       ],
     ),

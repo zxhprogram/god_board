@@ -227,6 +227,22 @@ class ApiService {
     }
   }
 
+  // 获取 Nacos 服务列表
+  static Future<Map<String, dynamic>> getNacosServices(
+    String namespaceId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/nacos/services?namespaceId=$namespaceId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
   // 获取 K8s 与 Nacos 的关联关系
   static Future<Map<String, dynamic>> getK8sNacosMapping({
     required String k8sNamespace,
