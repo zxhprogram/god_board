@@ -217,24 +217,6 @@ class _StorageConfigPageState extends State<StorageConfigPage> {
                     const Divider(),
                     const SizedBox(height: 16),
 
-                    // 服务器地址
-                    TextField(
-                      controller: _redisHostController,
-                      placeholder: const Text('请输入 Redis 服务器地址'),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('服务器地址').small.muted,
-                    const SizedBox(height: 16),
-
-                    // 端口号
-                    TextField(
-                      controller: _redisPortController,
-                      placeholder: const Text('请输入 Redis 端口号'),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('端口号').small.muted,
-                    const SizedBox(height: 16),
-
                     // 是否集群
                     Row(
                       children: [
@@ -252,6 +234,35 @@ class _StorageConfigPageState extends State<StorageConfigPage> {
                         const Text('是否集群模式'),
                       ],
                     ),
+                    const SizedBox(height: 16),
+
+                    // 服务器地址
+                    TextField(
+                      controller: _redisHostController,
+                      placeholder: _redisIsCluster
+                          ? const Text(
+                              '请输入 Redis 服务器地址，多个地址用逗号分隔，如：192.168.1.1:6379,192.168.1.2:6379',
+                            )
+                          : const Text('请输入 Redis 服务器地址'),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _redisIsCluster
+                          ? '服务器地址（多个地址用逗号分隔，格式：ip:port,ip:port）'
+                          : '服务器地址',
+                    ).small.muted,
+                    const SizedBox(height: 16),
+
+                    // 端口号（集群模式下禁用）
+                    TextField(
+                      controller: _redisPortController,
+                      placeholder: const Text('请输入 Redis 端口号'),
+                      enabled: !_redisIsCluster,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _redisIsCluster ? '端口号（集群模式下请在地址中指定）' : '端口号',
+                    ).small.muted,
                     const SizedBox(height: 16),
 
                     // 密码
