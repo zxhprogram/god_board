@@ -21,6 +21,12 @@ class _ConfigInsightPageState extends State<ConfigInsightPage> {
   ];
 
   @override
+  void dispose() {
+    _navItems.clear();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Row(
       children: [
