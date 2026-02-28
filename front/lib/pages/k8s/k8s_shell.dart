@@ -2,6 +2,25 @@ import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../../services/api_service.dart';
 
+// K8s 树节点数据类
+class K8sTreeNode {
+  final String id;
+  final String label;
+  final IconData icon;
+  final IconData? expandedIcon;
+  final Color? iconColor;
+  final dynamic data;
+
+  K8sTreeNode({
+    required this.id,
+    required this.label,
+    required this.icon,
+    this.expandedIcon,
+    this.iconColor,
+    required this.data,
+  });
+}
+
 class K8sShell extends StatefulWidget {
   final Widget child;
 
@@ -14,7 +33,7 @@ class K8sShell extends StatefulWidget {
 class _K8sShellState extends State<K8sShell> {
   bool _isLoading = true;
   String? _errorMessage;
-  List<TreeItem> _treeItems = [];
+  List<TreeItem<K8sTreeNode>> _treeItems = [];
 
   // 缓存数据
   final Map<String, List<dynamic>> _deploymentsCache = {};
@@ -56,13 +75,16 @@ class _K8sShellState extends State<K8sShell> {
       setState(() {
         _treeItems = items.map((ns) {
           final name = ns['name'] as String;
-          return TreeItem(
-            id: 'ns:$name',
-            label: name,
-            icon: Icons.folder_outlined,
-            expandedIcon: Icons.folder_open,
+          return TreeItem<K8sTreeNode>(
+            data: K8sTreeNode(
+              id: 'ns:$name',
+              label: name,
+              icon: BootstrapIcons.folder,
+              expandedIcon: BootstrapIcons.folder2Open,
+              data: ns,
+            ),
+            expanded: false,
             children: [],
-            data: ns,
           );
         }).toList();
         _isLoading = false;
@@ -75,7 +97,10 @@ class _K8sShellState extends State<K8sShell> {
     }
   }
 
-  Future<void> _loadDeployments(String namespace, TreeItem parentItem) async {
+  Future<void> _loadDeployments(
+    String namespace,
+    TreeItem<K8sTreeNode> parentItem,
+  ) async {
     if (_deploymentsCache.containsKey(namespace)) {
       _updateNamespaceChildren(
         namespace,
@@ -97,10 +122,12 @@ class _K8sShellState extends State<K8sShell> {
 
   void _updateNamespaceChildren(
     String namespace,
-    TreeItem parentItem,
+    TreeItem<K8sTreeNode> parentItem,
     List<dynamic> deployments,
   ) {
-    final index = _treeItems.indexWhere((item) => item.id == parentItem.id);
+    final index = _treeItems.indexWhere(
+      (item) => item.data.id == 'ns:$namespace',
+    );
     if (index == -1) return;
 
     final newChildren = deployments.map((dep) {
@@ -108,25 +135,24 @@ class _K8sShellState extends State<K8sShell> {
       final readyReplicas = dep['readyReplicas'] ?? 0;
       final replicas = dep['replicas'] ?? 0;
 
-      return TreeItem(
-        id: 'dep:$namespace:$name',
-        label: '$name ($readyReplicas/$replicas)',
-        icon: Icons.apps_outlined,
-        expandedIcon: Icons.apps,
+      return TreeItem<K8sTreeNode>(
+        data: K8sTreeNode(
+          id: 'dep:$namespace:$name',
+          label: '$name ($readyReplicas/$replicas)',
+          icon: BootstrapIcons.grid,
+          expandedIcon: BootstrapIcons.gridFill,
+          data: dep,
+        ),
+        expanded: false,
         children: [],
-        data: dep,
       );
     }).toList();
 
     setState(() {
-      _treeItems[index] = TreeItem(
-        id: parentItem.id,
-        label: parentItem.label,
-        icon: parentItem.icon,
-        expandedIcon: parentItem.expandedIcon,
+      _treeItems[index] = TreeItem<K8sTreeNode>(
+        data: _treeItems[index].data,
+        expanded: true,
         children: newChildren,
-        data: parentItem.data,
-        isExpanded: true,
       );
     });
   }
@@ -134,7 +160,7 @@ class _K8sShellState extends State<K8sShell> {
   Future<void> _loadPods(
     String namespace,
     String deployment,
-    TreeItem parentItem,
+    TreeItem<K8sTreeNode> parentItem,
   ) async {
     final cacheKey = '$namespace:$deployment';
 
@@ -161,14 +187,18 @@ class _K8sShellState extends State<K8sShell> {
   void _updateDeploymentChildren(
     String namespace,
     String deployment,
-    TreeItem parentItem,
+    TreeItem<K8sTreeNode> parentItem,
     List<dynamic> pods,
   ) {
-    final nsIndex = _treeItems.indexWhere((item) => item.id == 'ns:$namespace');
+    final nsIndex = _treeItems.indexWhere(
+      (item) => item.data.id == 'ns:$namespace',
+    );
     if (nsIndex == -1) return;
 
     final depIndex = _treeItems[nsIndex].children.indexWhere(
-      (item) => item.id == parentItem.id,
+      (item) =>
+          (item as TreeItem<K8sTreeNode>).data.id ==
+          'dep:$namespace:$deployment',
     );
     if (depIndex == -1) return;
 
@@ -180,61 +210,57 @@ class _K8sShellState extends State<K8sShell> {
       Color podColor;
       switch (status.toLowerCase()) {
         case 'running':
-          podIcon = Icons.circle;
+          podIcon = BootstrapIcons.circleFill;
           podColor = Colors.green;
         case 'pending':
-          podIcon = Icons.hourglass_empty;
+          podIcon = BootstrapIcons.hourglass;
           podColor = Colors.orange;
         case 'failed':
-          podIcon = Icons.error;
+          podIcon = BootstrapIcons.xCircleFill;
           podColor = Colors.red;
         default:
-          podIcon = Icons.help_outline;
+          podIcon = BootstrapIcons.questionCircle;
           podColor = Colors.gray;
       }
 
-      return TreeItem(
-        id: 'pod:$namespace:$deployment:$name',
-        label: name,
-        icon: podIcon,
-        iconColor: podColor,
+      return TreeItem<K8sTreeNode>(
+        data: K8sTreeNode(
+          id: 'pod:$namespace:$deployment:$name',
+          label: name,
+          icon: podIcon,
+          iconColor: podColor,
+          data: pod,
+        ),
+        expanded: false,
         children: [],
-        data: pod,
       );
     }).toList();
 
-    final updatedDeployment = TreeItem(
-      id: parentItem.id,
-      label: parentItem.label,
-      icon: parentItem.icon,
-      expandedIcon: parentItem.expandedIcon,
+    final updatedChildren = List<TreeItem<K8sTreeNode>>.from(
+      _treeItems[nsIndex].children.cast<TreeItem<K8sTreeNode>>(),
+    );
+    updatedChildren[depIndex] = TreeItem<K8sTreeNode>(
+      data: updatedChildren[depIndex].data,
+      expanded: true,
       children: newChildren,
-      data: parentItem.data,
-      isExpanded: true,
     );
 
-    final updatedChildren = List<TreeItem>.from(_treeItems[nsIndex].children);
-    updatedChildren[depIndex] = updatedDeployment;
-
     setState(() {
-      _treeItems[nsIndex] = TreeItem(
-        id: _treeItems[nsIndex].id,
-        label: _treeItems[nsIndex].label,
-        icon: _treeItems[nsIndex].icon,
-        expandedIcon: _treeItems[nsIndex].expandedIcon,
-        children: updatedChildren,
+      _treeItems[nsIndex] = TreeItem<K8sTreeNode>(
         data: _treeItems[nsIndex].data,
-        isExpanded: _treeItems[nsIndex].isExpanded,
+        expanded: _treeItems[nsIndex].expanded,
+        children: updatedChildren,
       );
     });
   }
 
-  void _onItemExpand(TreeItem item) {
-    if (item.id.startsWith('ns:')) {
-      final namespace = item.id.substring(3);
+  void _onItemExpand(TreeItem<K8sTreeNode> item) {
+    final id = item.data.id;
+    if (id.startsWith('ns:')) {
+      final namespace = id.substring(3);
       _loadDeployments(namespace, item);
-    } else if (item.id.startsWith('dep:')) {
-      final parts = item.id.split(':');
+    } else if (id.startsWith('dep:')) {
+      final parts = id.split(':');
       if (parts.length >= 3) {
         final namespace = parts[1];
         final deployment = parts[2];
@@ -243,74 +269,20 @@ class _K8sShellState extends State<K8sShell> {
     }
   }
 
-  void _onItemCollapse(TreeItem item) {
-    if (item.id.startsWith('ns:')) {
-      final index = _treeItems.indexWhere((i) => i.id == item.id);
-      if (index != -1) {
-        setState(() {
-          _treeItems[index] = TreeItem(
-            id: item.id,
-            label: item.label,
-            icon: item.icon,
-            expandedIcon: item.expandedIcon,
-            children: item.children,
-            data: item.data,
-            isExpanded: false,
-          );
-        });
-      }
-    } else if (item.id.startsWith('dep:')) {
-      final parts = item.id.split(':');
-      if (parts.length >= 3) {
-        final namespace = parts[1];
-        final nsIndex = _treeItems.indexWhere((i) => i.id == 'ns:$namespace');
-        if (nsIndex != -1) {
-          final depIndex = _treeItems[nsIndex].children.indexWhere(
-            (i) => i.id == item.id,
-          );
-          if (depIndex != -1) {
-            final updatedChildren = List<TreeItem>.from(
-              _treeItems[nsIndex].children,
-            );
-            updatedChildren[depIndex] = TreeItem(
-              id: item.id,
-              label: item.label,
-              icon: item.icon,
-              expandedIcon: item.expandedIcon,
-              children: item.children,
-              data: item.data,
-              isExpanded: false,
-            );
-            setState(() {
-              _treeItems[nsIndex] = TreeItem(
-                id: _treeItems[nsIndex].id,
-                label: _treeItems[nsIndex].label,
-                icon: _treeItems[nsIndex].icon,
-                expandedIcon: _treeItems[nsIndex].expandedIcon,
-                children: updatedChildren,
-                data: _treeItems[nsIndex].data,
-                isExpanded: _treeItems[nsIndex].isExpanded,
-              );
-            });
-          }
-        }
-      }
-    }
-  }
-
-  void _onItemTap(TreeItem item) {
-    if (item.id.startsWith('ns:')) {
-      final namespace = item.id.substring(3);
+  void _onItemTap(TreeItem<K8sTreeNode> item) {
+    final id = item.data.id;
+    if (id.startsWith('ns:')) {
+      final namespace = id.substring(3);
       context.go('/k8s/namespace/$namespace');
-    } else if (item.id.startsWith('dep:')) {
-      final parts = item.id.split(':');
+    } else if (id.startsWith('dep:')) {
+      final parts = id.split(':');
       if (parts.length >= 3) {
         final namespace = parts[1];
         final deployment = parts[2];
         context.go('/k8s/namespace/$namespace/deployment/$deployment');
       }
-    } else if (item.id.startsWith('pod:')) {
-      final parts = item.id.split(':');
+    } else if (id.startsWith('pod:')) {
+      final parts = id.split(':');
       if (parts.length >= 4) {
         final namespace = parts[1];
         final deployment = parts[2];
@@ -403,11 +375,62 @@ class _K8sShellState extends State<K8sShell> {
               Expanded(
                 child: _treeItems.isEmpty
                     ? const Center(child: Text('暂无数据'))
-                    : TreeView(
-                        items: _treeItems,
-                        onItemExpand: _onItemExpand,
-                        onItemCollapse: _onItemCollapse,
-                        onItemTap: _onItemTap,
+                    : TreeView<K8sTreeNode>(
+                        shrinkWrap: true,
+                        branchLine: BranchLine.line,
+                        nodes: _treeItems,
+                        onSelectionChanged: TreeView.defaultSelectionHandler(
+                          _treeItems,
+                          (value) {
+                            setState(() {
+                              _treeItems = value.cast<TreeItem<K8sTreeNode>>();
+                            });
+                          },
+                        ),
+                        builder: (context, node) {
+                          final item = node as TreeItem<K8sTreeNode>;
+                          final data = item.data;
+                          final isExpanded = item.expanded;
+                          // 根据节点类型判断是否可以展开（namespace 和 deployment 可以展开）
+                          final canExpand =
+                              data.id.startsWith('ns:') ||
+                              data.id.startsWith('dep:');
+
+                          return TreeItemView(
+                            onPressed: () => _onItemTap(item),
+                            onDoublePressed: canExpand
+                                ? () {
+                                    // 双击展开/折叠
+                                    final newExpanded = !isExpanded;
+                                    setState(() {
+                                      TreeView.defaultItemExpandHandler(
+                                        _treeItems,
+                                        node,
+                                        (value) {
+                                          _treeItems = value
+                                              .cast<TreeItem<K8sTreeNode>>();
+                                        },
+                                      )(newExpanded);
+                                    });
+                                    // 如果展开，加载数据
+                                    if (newExpanded) {
+                                      _onItemExpand(item);
+                                    }
+                                  }
+                                : null,
+                            leading: Icon(
+                              isExpanded && data.expandedIcon != null
+                                  ? data.expandedIcon!
+                                  : data.icon,
+                              size: 18,
+                              color: data.iconColor ?? Colors.blue,
+                            ),
+                            child: Text(
+                              data.label,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          );
+                        },
                       ),
               ),
             ],
@@ -416,149 +439,6 @@ class _K8sShellState extends State<K8sShell> {
         // 右侧内容区域
         Expanded(child: widget.child),
       ],
-    );
-  }
-}
-
-// TreeItem 数据类
-class TreeItem {
-  final String id;
-  final String label;
-  final IconData icon;
-  final IconData? expandedIcon;
-  final Color? iconColor;
-  final List<TreeItem> children;
-  final dynamic data;
-  final bool isExpanded;
-
-  TreeItem({
-    required this.id,
-    required this.label,
-    required this.icon,
-    this.expandedIcon,
-    this.iconColor,
-    required this.children,
-    this.data,
-    this.isExpanded = false,
-  });
-}
-
-// TreeView 组件
-class TreeView extends StatelessWidget {
-  final List<TreeItem> items;
-  final Function(TreeItem)? onItemExpand;
-  final Function(TreeItem)? onItemCollapse;
-  final Function(TreeItem)? onItemTap;
-
-  const TreeView({
-    super.key,
-    required this.items,
-    this.onItemExpand,
-    this.onItemCollapse,
-    this.onItemTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        return _buildTreeItem(context, items[index], 0);
-      },
-    );
-  }
-
-  Widget _buildTreeItem(BuildContext context, TreeItem item, int level) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _TreeItemWidget(
-          item: item,
-          level: level,
-          onExpand: () => onItemExpand?.call(item),
-          onCollapse: () => onItemCollapse?.call(item),
-          onTap: () => onItemTap?.call(item),
-        ),
-        if (item.isExpanded && item.children.isNotEmpty)
-          ...item.children.map(
-            (child) => _buildTreeItem(context, child, level + 1),
-          ),
-      ],
-    );
-  }
-}
-
-class _TreeItemWidget extends StatelessWidget {
-  final TreeItem item;
-  final int level;
-  final VoidCallback onExpand;
-  final VoidCallback onCollapse;
-  final VoidCallback onTap;
-
-  const _TreeItemWidget({
-    required this.item,
-    required this.level,
-    required this.onExpand,
-    required this.onCollapse,
-    required this.onTap,
-  });
-
-  void _toggleExpand() {
-    if (item.isExpanded) {
-      onCollapse();
-    } else {
-      onExpand();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasChildren =
-        item.children.isNotEmpty ||
-        item.id.startsWith('ns:') ||
-        item.id.startsWith('dep:');
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.only(
-          left: 16.0 + level * 24.0,
-          top: 8,
-          bottom: 8,
-          right: 16,
-        ),
-        child: Row(
-          children: [
-            if (hasChildren)
-              GestureDetector(
-                onTap: _toggleExpand,
-                child: Icon(
-                  item.isExpanded ? Icons.expand_less : Icons.expand_more,
-                  size: 20,
-                  color: Colors.gray,
-                ),
-              )
-            else
-              const SizedBox(width: 20),
-            const SizedBox(width: 4),
-            Icon(
-              item.isExpanded && item.expandedIcon != null
-                  ? item.expandedIcon!
-                  : item.icon,
-              size: 20,
-              color: item.iconColor ?? Colors.blue,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                item.label,
-                style: const TextStyle(fontSize: 14),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
