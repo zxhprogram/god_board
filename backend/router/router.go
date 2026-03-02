@@ -14,6 +14,7 @@ func SetupRouter() *gin.Engine {
 	r.POST("/api/nacos/login", handlers.HandleLogin)
 	r.GET("/api/nacos/namespaces", handlers.HandleGetNamespaces)
 	r.GET("/api/nacos/configs", handlers.HandleGetConfigs)
+	r.GET("/api/nacos/config/detail", handlers.HandleGetConfigDetail)
 	r.GET("/api/nacos/services", handlers.HandleGetServices)
 	r.GET("/api/nacos/instances", handlers.HandleInstances)
 

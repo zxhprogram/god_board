@@ -243,6 +243,80 @@ func HandleGetConfigs(c *gin.Context) {
 	})
 }
 
+// HandleGetConfigDetail 获取 Nacos 单个配置详情
+func HandleGetConfigDetail(c *gin.Context) {
+	if accessToken == "" {
+		c.JSON(http.StatusUnauthorized, models.Response{
+			Code:    401,
+			Message: "未登录或登录已过期",
+			Data:    nil,
+		})
+		return
+	}
+
+	// 从数据库获取 Nacos 配置
+	var nacosConfig models.NacosConfig
+	result := db.DB.First(&nacosConfig)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Code:    500,
+			Message: "未找到 Nacos 服务器配置，请先配置服务器",
+			Data:    nil,
+		})
+		return
+	}
+
+	namespaceID := c.Query("namespaceId")
+	dataID := c.Query("dataId")
+	group := c.Query("group")
+
+	// Nacos 获取配置内容的 API
+	url := fmt.Sprintf("%s/nacos/v1/cs/configs?dataId=%s&group=%s&tenant=%s&accessToken=%s",
+		nacosConfig.Address, dataID, group, namespaceID, accessToken)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Code:    500,
+			Message: "请求Nacos失败: " + err.Error(),
+			Data:    nil,
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Code:    500,
+			Message: "读取响应失败: " + err.Error(),
+			Data:    nil,
+		})
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.JSON(resp.StatusCode, models.Response{
+			Code:    resp.StatusCode,
+			Message: "获取配置详情失败: " + string(body),
+			Data:    nil,
+		})
+		return
+	}
+
+	// 返回配置内容
+	c.JSON(http.StatusOK, models.Response{
+		Code:    200,
+		Message: "获取配置详情成功",
+		Data: map[string]string{
+			"content":     string(body),
+			"dataId":      dataID,
+			"group":       group,
+			"namespaceId": namespaceID,
+		},
+	})
+}
+
 // HandleGetServices 获取 Nacos 服务列表
 func HandleGetServices(c *gin.Context) {
 	if accessToken == "" {

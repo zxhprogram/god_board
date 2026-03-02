@@ -127,7 +127,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
     String namespaceId,
     String configId,
   ) async {
-    final response = await ApiService.getNacosConfigDetail(
+    final response = await ApiService.getNacosConfigById(
       namespaceId: namespaceId,
       configId: configId,
     );

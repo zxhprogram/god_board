@@ -243,6 +243,26 @@ class ApiService {
     }
   }
 
+  // 获取 Nacos 配置详情
+  static Future<Map<String, dynamic>> getNacosConfigDetail({
+    required String namespaceId,
+    required String dataId,
+    required String group,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '$baseUrl/api/nacos/config/detail?namespaceId=$namespaceId&dataId=$dataId&group=$group',
+        ),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
   // 获取 K8s 与 Nacos 的关联关系
   static Future<Map<String, dynamic>> getK8sNacosMapping({
     required String k8sNamespace,
@@ -262,8 +282,8 @@ class ApiService {
     }
   }
 
-  // 获取单个 Nacos 配置的详情
-  static Future<Map<String, dynamic>> getNacosConfigDetail({
+  // 根据 configId 从配置列表中查找配置（用于 Deployment 详情页）
+  static Future<Map<String, dynamic>> getNacosConfigById({
     required String namespaceId,
     required String configId,
   }) async {
