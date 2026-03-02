@@ -1,16 +1,4 @@
-import 'package:flutter/material.dart'
-    show
-        ElevatedButton,
-        DataTable,
-        DataColumn,
-        DataRow,
-        DataCell,
-        ScaffoldMessenger,
-        SnackBar,
-        ListTile,
-        Scaffold,
-        ListView;
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Scaffold, ListView;
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 import '../../services/api_service.dart';
 
@@ -37,7 +25,6 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
 
   // Nacos 配置关联相关状态
   List<dynamic> _nacosNamespaces = [];
-  bool _isLoadingNacosNamespaces = false;
   final Map<String, List<dynamic>> _nacosConfigs = {};
   final Map<String, bool> _isLoadingNacosConfigs = {};
   String? _selectedNacosNamespace;
@@ -45,14 +32,12 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
   Map<String, dynamic>? _existingMapping;
   Map<String, dynamic>? _linkedNacosConfig; // 已关联的 Nacos 配置详情
   bool _isLoadingMapping = true;
-  bool _isSavingMapping = false;
 
   // Nacos 服务关联相关状态
   Map<String, dynamic>? _existingServiceMapping;
   Map<String, dynamic>? _linkedNacosService; // 已关联的 Nacos 服务详情
   List<dynamic> _nacosServiceInstances = []; // 服务实例列表
   bool _isLoadingServiceMapping = true;
-  bool _isSavingServiceMapping = false;
 
   @override
   void initState() {
@@ -68,6 +53,36 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
         oldWidget.deployment != widget.deployment) {
       _loadData();
     }
+  }
+
+  // 显示 Toast 提示
+  void _showToast(String message, {bool isError = false}) {
+    showToast(
+      context: context,
+      builder: (context, overlay) => Card(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isError ? Icons.error : Icons.info,
+                color: isError ? Colors.red : Colors.blue,
+              ),
+              const SizedBox(width: 12),
+              Text(message),
+              const SizedBox(width: 8),
+              IconButton.ghost(
+                onPressed: overlay.close,
+                icon: const Icon(Icons.close, size: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+      location: ToastLocation.topRight,
+      showDuration: const Duration(seconds: 3),
+    );
   }
 
   Future<void> _loadData() async {
@@ -212,20 +227,11 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
 
   // 加载 Nacos namespaces
   Future<void> _loadNacosNamespaces() async {
-    setState(() {
-      _isLoadingNacosNamespaces = true;
-    });
-
     // 先调用 Nacos 登录
     final loginResponse = await ApiService.nacosLogin();
     if (loginResponse['code'] != 200) {
-      setState(() {
-        _isLoadingNacosNamespaces = false;
-      });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nacos 登录失败: ${loginResponse['message']}')),
-        );
+        _showToast('Nacos 登录失败: ${loginResponse['message']}', isError: true);
       }
       return;
     }
@@ -236,25 +242,16 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
       final data = response['data'];
       // 确保 data 是 Map 类型
       if (data is List<dynamic>) {
-        setState(() {
-          _nacosNamespaces = data;
-          _isLoadingNacosNamespaces = false;
-        });
       } else {
         setState(() {
           _nacosNamespaces = [];
-          _isLoadingNacosNamespaces = false;
         });
       }
     } else {
-      setState(() {
-        _isLoadingNacosNamespaces = false;
-      });
       if (mounted && response['code'] != 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('获取 Nacos Namespaces 失败: ${response['message']}'),
-          ),
+        _showToast(
+          '获取 Nacos Namespaces 失败: ${response['message']}',
+          isError: true,
         );
       }
     }
@@ -281,48 +278,6 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
         _nacosConfigs[namespaceId] = [];
         _isLoadingNacosConfigs[namespaceId] = false;
       });
-    }
-  }
-
-  // 保存关联关系
-  Future<void> _saveMapping() async {
-    if (_selectedNacosNamespace == null || _selectedNacosConfigId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请选择 Nacos Namespace 和 Config')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSavingMapping = true;
-    });
-
-    final response = await ApiService.saveK8sNacosMapping(
-      k8sNamespace: widget.namespace,
-      k8sDeployment: widget.deployment,
-      nacosNamespace: _selectedNacosNamespace!,
-      nacosConfigId: _selectedNacosConfigId!,
-    );
-
-    setState(() {
-      _isSavingMapping = false;
-    });
-
-    if (response['code'] == 200) {
-      setState(() {
-        _existingMapping = response['data'] as Map<String, dynamic>;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('关联关系保存成功')));
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('保存失败: ${response['message']}')));
-      }
     }
   }
 
@@ -402,7 +357,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: _buildBody());
+    return Scaffold(child: _buildBody());
   }
 
   Widget _buildBody() {
@@ -431,7 +386,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
               style: const TextStyle(fontSize: 16, color: Colors.gray),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: _loadData, child: const Text('重试')),
+            PrimaryButton(onPressed: _loadData, child: const Text('重试')),
           ],
         ),
       );
@@ -994,78 +949,82 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
   Widget _buildServiceTable() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: const [
-          DataColumn(label: Text('名称')),
-          DataColumn(label: Text('类型')),
-          DataColumn(label: Text('Cluster IP')),
-          DataColumn(label: Text('端口')),
-          DataColumn(label: Text('Selector')),
-        ],
-        rows: _matchedServices.map((service) {
-          final ports = service['ports'] as List<dynamic>? ?? [];
-          final selector = service['selector'] as Map<String, dynamic>? ?? {};
-
-          return DataRow(
+      child: Table(
+        rows: [
+          TableHeader(
             cells: [
-              DataCell(Text(service['name'] ?? '-')),
-              DataCell(
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getServiceTypeColor(service['type']),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    service['type'] ?? '-',
-                    style: const TextStyle(fontSize: 12, color: Colors.white),
+              TableCell(child: Text('名称')),
+              TableCell(child: Text('类型')),
+              TableCell(child: Text('Cluster IP')),
+              TableCell(child: Text('端口')),
+              TableCell(child: Text('Selector')),
+            ],
+          ),
+          ..._matchedServices.map((service) {
+            final ports = service['ports'] as List<dynamic>? ?? [];
+            final selector = service['selector'] as Map<String, dynamic>? ?? {};
+
+            return TableRow(
+              cells: [
+                TableCell(child: Text(service['name'] ?? '-')),
+                TableCell(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getServiceTypeColor(service['type']),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      service['type'] ?? '-',
+                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                    ),
                   ),
                 ),
-              ),
-              DataCell(Text(service['clusterIP'] ?? '-')),
-              DataCell(
-                ports.isEmpty
-                    ? const Text('-')
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: ports.map((port) {
-                          return Text(
-                            '${port['port']}:${port['targetPort']}',
-                            style: const TextStyle(fontSize: 12),
-                          );
-                        }).toList(),
-                      ),
-              ),
-              DataCell(
-                selector.isEmpty
-                    ? const Text('-')
-                    : Wrap(
-                        spacing: 4,
-                        children: selector.entries.map((e) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.gray.shade200,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '${e.key}=${e.value}',
-                              style: const TextStyle(fontSize: 11),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-              ),
-            ],
-          );
-        }).toList(),
+                TableCell(child: Text(service['clusterIP'] ?? '-')),
+                TableCell(
+                  child: ports.isEmpty
+                      ? const Text('-')
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: ports.map((port) {
+                            return Text(
+                              '${port['port']}:${port['targetPort']}',
+                              style: const TextStyle(fontSize: 12),
+                            );
+                          }).toList(),
+                        ),
+                ),
+                TableCell(
+                  child: selector.isEmpty
+                      ? const Text('-')
+                      : Wrap(
+                          spacing: 4,
+                          children: selector.entries.map((e) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.gray.shade200,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${e.key}=${e.value}',
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                ),
+              ],
+            );
+          }),
+        ],
       ),
     );
   }
@@ -1260,133 +1219,6 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
     );
   }
 
-  // 构建 Nacos TreeView
-  Widget _buildNacosTreeView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '选择 Nacos 配置:',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.gray.shade300),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            children: _nacosNamespaces.map((ns) {
-              final namespaceId = ns['namespace'] ?? '';
-              final namespaceName =
-                  ns['namespaceShowName'] ?? ns['namespace'] ?? '未知 Namespace';
-              final isExpanded = _nacosConfigs.containsKey(namespaceId);
-              final isLoading = _isLoadingNacosConfigs[namespaceId] ?? false;
-              final isSelected = _selectedNacosNamespace == namespaceId;
-
-              return Column(
-                children: [
-                  ListTile(
-                    leading: Icon(
-                      isExpanded ? Icons.folder_open : Icons.folder,
-                      color: isSelected ? Colors.blue : Colors.orange,
-                    ),
-                    title: Text(
-                      namespaceName,
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : null,
-                        color: isSelected ? Colors.blue : null,
-                      ),
-                    ),
-                    trailing: isLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Icon(
-                            isExpanded ? Icons.expand_less : Icons.expand_more,
-                          ),
-                    onTap: () {
-                      if (isExpanded) {
-                        // 折叠
-                        setState(() {
-                          _nacosConfigs.remove(namespaceId);
-                          if (_selectedNacosNamespace == namespaceId) {
-                            _selectedNacosNamespace = null;
-                            _selectedNacosConfigId = null;
-                          }
-                        });
-                      } else {
-                        // 展开并加载 configs
-                        setState(() {
-                          _selectedNacosNamespace = namespaceId;
-                        });
-                        _loadNacosConfigs(namespaceId);
-                      }
-                    },
-                  ),
-                  // 子节点 - Configs
-                  if (isExpanded && _nacosConfigs.containsKey(namespaceId))
-                    Padding(
-                      padding: const EdgeInsets.only(left: 32),
-                      child: Column(
-                        children: _nacosConfigs[namespaceId]!.map((config) {
-                          final configId = config['id']?.toString() ?? '';
-                          final configDataId = config['dataId'] ?? '';
-                          final configGroup = config['group'] ?? '';
-                          final isConfigSelected =
-                              _selectedNacosConfigId == configId;
-
-                          return ListTile(
-                            leading: Icon(
-                              Icons.description,
-                              color: isConfigSelected
-                                  ? Colors.blue
-                                  : Colors.gray,
-                            ),
-                            title: Text(
-                              configDataId,
-                              style: TextStyle(
-                                fontWeight: isConfigSelected
-                                    ? FontWeight.bold
-                                    : null,
-                                color: isConfigSelected ? Colors.blue : null,
-                              ),
-                            ),
-                            subtitle: Text('Group: $configGroup'),
-                            trailing: isConfigSelected
-                                ? Icon(
-                                    Icons.check_circle,
-                                    color: Colors.green.shade700,
-                                  )
-                                : null,
-                            onTap: () {
-                              setState(() {
-                                _selectedNacosConfigId = configId;
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-        if (_selectedNacosConfigId != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              '已选择: ${_nacosConfigs[_selectedNacosNamespace]?.firstWhere((c) => c['id']?.toString() == _selectedNacosConfigId, orElse: () => {'dataId': '未知'})['dataId'] ?? '未知'}',
-              style: TextStyle(fontSize: 12, color: Colors.green.shade700),
-            ),
-          ),
-      ],
-    );
-  }
-
   // 构建已关联的 Nacos 配置摘要
   Widget _buildLinkedConfigSummary() {
     final dataId = _linkedNacosConfig!['dataId'] ?? '未知';
@@ -1547,6 +1379,36 @@ class _NacosMappingDrawerContentState extends State<NacosMappingDrawerContent> {
   String? _selectedNacosConfigId;
   bool _isSavingMapping = false;
 
+  // 显示 Toast 提示
+  void _showToast(String message, {bool isError = false}) {
+    showToast(
+      context: context,
+      builder: (context, overlay) => Card(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isError ? Icons.error : Icons.info,
+                color: isError ? Colors.red : Colors.blue,
+              ),
+              const SizedBox(width: 12),
+              Text(message),
+              const SizedBox(width: 8),
+              IconButton.ghost(
+                onPressed: overlay.close,
+                icon: const Icon(Icons.close, size: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+      location: ToastLocation.topRight,
+      showDuration: const Duration(seconds: 3),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1565,9 +1427,7 @@ class _NacosMappingDrawerContentState extends State<NacosMappingDrawerContent> {
         _isLoadingNacosNamespaces = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nacos 登录失败: ${loginResponse['message']}')),
-        );
+        _showToast('Nacos 登录失败: ${loginResponse['message']}', isError: true);
       }
       return;
     }
@@ -1592,10 +1452,9 @@ class _NacosMappingDrawerContentState extends State<NacosMappingDrawerContent> {
         _isLoadingNacosNamespaces = false;
       });
       if (mounted && response['code'] != 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('获取 Nacos Namespaces 失败: ${response['message']}'),
-          ),
+        _showToast(
+          '获取 Nacos Namespaces 失败: ${response['message']}',
+          isError: true,
         );
       }
     }
@@ -1649,16 +1508,12 @@ class _NacosMappingDrawerContentState extends State<NacosMappingDrawerContent> {
 
     if (response['code'] == 200) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('关联关系保存成功')));
+        _showToast('关联关系保存成功');
         closeOverlay(context);
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('保存失败: ${response['message']}')));
+        _showToast('保存失败: ${response['message']}', isError: true);
       }
     }
   }
@@ -1807,21 +1662,43 @@ class _NacosMappingDrawerContentState extends State<NacosMappingDrawerContent> {
                       final configId = config['id']?.toString() ?? '';
                       final isSelected = _selectedNacosConfigId == configId;
 
-                      return ListTile(
-                        selected: isSelected,
+                      return GestureDetector(
                         onTap: () {
                           setState(() {
                             _selectedNacosConfigId = configId;
                           });
                         },
-                        title: Text(dataId),
-                        subtitle: Text('Group: $group'),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check_circle,
-                                color: Colors.green.shade600,
-                              )
-                            : null,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          color: isSelected ? Colors.blue.shade50 : null,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(dataId),
+                                    Text(
+                                      'Group: $group',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.gray.shade500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isSelected)
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green.shade600,
+                                ),
+                            ],
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -1895,6 +1772,36 @@ class _NacosServiceMappingDrawerContentState
   String? _selectedNacosServiceName;
   bool _isSavingMapping = false;
 
+  // 显示 Toast 提示
+  void _showToast(String message, {bool isError = false}) {
+    showToast(
+      context: context,
+      builder: (context, overlay) => Card(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isError ? Icons.error : Icons.info,
+                color: isError ? Colors.red : Colors.blue,
+              ),
+              const SizedBox(width: 12),
+              Text(message),
+              const SizedBox(width: 8),
+              IconButton.ghost(
+                onPressed: overlay.close,
+                icon: const Icon(Icons.close, size: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+      location: ToastLocation.topRight,
+      showDuration: const Duration(seconds: 3),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1918,9 +1825,7 @@ class _NacosServiceMappingDrawerContentState
         _isLoadingNacosNamespaces = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nacos 登录失败: ${loginResponse['message']}')),
-        );
+        _showToast('Nacos 登录失败: ${loginResponse['message']}', isError: true);
       }
       return;
     }
@@ -1946,10 +1851,9 @@ class _NacosServiceMappingDrawerContentState
         _isLoadingNacosNamespaces = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('获取 Namespace 失败: ${response['message'] ?? '未知错误'}'),
-          ),
+        _showToast(
+          '获取 Namespace 失败: ${response['message'] ?? '未知错误'}',
+          isError: true,
         );
       }
     }
@@ -1981,9 +1885,7 @@ class _NacosServiceMappingDrawerContentState
         _isLoadingNacosServices = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('获取服务列表失败: ${response['message'] ?? '未知错误'}')),
-        );
+        _showToast('获取服务列表失败: ${response['message'] ?? '未知错误'}', isError: true);
       }
     }
   }
@@ -2008,23 +1910,17 @@ class _NacosServiceMappingDrawerContentState
         if (response['code'] == 200) {
           if (mounted) {
             closeOverlay(context);
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('关联保存成功')));
+            _showToast('关联保存成功');
           }
         } else {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('保存失败: ${response['message'] ?? '未知错误'}')),
-            );
+            _showToast('保存失败: ${response['message'] ?? '未知错误'}', isError: true);
           }
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('保存失败: $e')));
+        _showToast('保存失败: $e', isError: true);
       }
     } finally {
       if (mounted) {
@@ -2181,46 +2077,65 @@ class _NacosServiceMappingDrawerContentState
                       final healthyCount = service['healthyInstanceCount'] ?? 0;
                       final isSelected = _selectedNacosServiceName == name;
 
-                      return ListTile(
-                        selected: isSelected,
+                      return GestureDetector(
                         onTap: () {
                           setState(() {
                             _selectedNacosServiceName = name;
                           });
                         },
-                        leading: Icon(
-                          Icons.dns,
-                          color: isSelected ? Colors.blue : Colors.gray,
-                        ),
-                        title: Text(name),
-                        subtitle: Text('Group: $groupName'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          color: isSelected ? Colors.blue.shade50 : null,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.dns,
+                                color: isSelected ? Colors.blue : Colors.gray,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade100,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '$healthyCount/$ipCount',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.green.shade700,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(name),
+                                    Text(
+                                      'Group: $groupName',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.gray.shade500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (isSelected)
-                              Icon(
-                                Icons.check_circle,
-                                color: Colors.green.shade600,
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '$healthyCount/$ipCount',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
                               ),
-                          ],
+                              const SizedBox(width: 8),
+                              if (isSelected)
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green.shade600,
+                                ),
+                            ],
+                          ),
                         ),
                       );
                     },
