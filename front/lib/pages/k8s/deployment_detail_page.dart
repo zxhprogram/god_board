@@ -10,8 +10,7 @@ import 'package:flutter/material.dart'
         ListTile,
         Scaffold,
         ListView;
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide Scaffold, ListTile, ListView;
+import 'package:shadcn_flutter/shadcn_flutter.dart' hide Scaffold, ListView;
 
 import '../../services/api_service.dart';
 

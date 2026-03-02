@@ -214,7 +214,7 @@ class _CacheMetadataConfigPageState extends State<CacheMetadataConfigPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,150 +411,154 @@ class _CacheMetadataConfigPageState extends State<CacheMetadataConfigPage> {
             const SizedBox(height: 24),
 
             // 配置列表
-            Expanded(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            '已保存的缓存元数据列表',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          '已保存的缓存元数据列表',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
                           ),
-                          const Spacer(),
-                          SecondaryButton(
-                            onPressed: _isLoading ? null : _loadConfigs,
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.refresh, size: 16),
-                                SizedBox(width: 4),
-                                Text('刷新'),
-                              ],
-                            ),
+                        ),
+                        const Spacer(),
+                        SecondaryButton(
+                          onPressed: _isLoading ? null : _loadConfigs,
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.refresh, size: 16),
+                              SizedBox(width: 4),
+                              Text('刷新'),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: _isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : _savedConfigs.isEmpty
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      BootstrapIcons.database,
-                                      size: 64,
-                                      color: Colors.gray.shade300,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _isLoading
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        : _savedConfigs.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    BootstrapIcons.database,
+                                    size: 64,
+                                    color: Colors.gray.shade300,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    '暂无缓存元数据配置',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.gray.shade500,
                                     ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      '暂无缓存元数据配置',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.gray.shade500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : Builder(
-                                builder: (context) {
-                                  print(
-                                    'Building DataTable with ${_savedConfigs.length} rows',
-                                  );
-                                  return SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: DataTable(
-                                      columns: const [
-                                        DataColumn(label: Text('ID')),
-                                        DataColumn(label: Text('缓存Key')),
-                                        DataColumn(label: Text('缓存Value')),
-                                        DataColumn(label: Text('过期时间')),
-                                        DataColumn(label: Text('描述')),
-                                        DataColumn(label: Text('创建时间')),
-                                        DataColumn(label: Text('操作')),
-                                      ],
-                                      rows: _savedConfigs.map((config) {
-                                        final configMap =
-                                            config is Map<String, dynamic>
-                                            ? config
-                                            : <String, dynamic>{};
-                                        return DataRow(
-                                          cells: [
-                                            DataCell(
-                                              Text('${configMap['id'] ?? ''}'),
-                                            ),
-                                            DataCell(
-                                              Text(
-                                                configMap['cache_key']
-                                                        ?.toString() ??
-                                                    '',
-                                              ),
-                                            ),
-                                            DataCell(
-                                              Text(
-                                                configMap['cache_value']
-                                                        ?.toString() ??
-                                                    '',
-                                              ),
-                                            ),
-                                            DataCell(
-                                              Text(
-                                                configMap['expire_time']
-                                                        ?.toString() ??
-                                                    '',
-                                              ),
-                                            ),
-                                            DataCell(
-                                              Text(
-                                                configMap['description']
-                                                        ?.toString() ??
-                                                    '',
-                                              ),
-                                            ),
-                                            DataCell(
-                                              Text(
-                                                configMap['created_at'] != null
-                                                    ? configMap['created_at']
-                                                          .toString()
-                                                          .substring(0, 19)
-                                                    : '',
-                                              ),
-                                            ),
-                                            DataCell(
-                                              IconButton.ghost(
-                                                onPressed: () => _deleteConfig(
-                                                  configMap['id'],
-                                                ),
-                                                icon: const Icon(
-                                                  BootstrapIcons.trash,
-                                                  color: Colors.red,
-                                                  size: 18,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      }).toList(),
-                                    ),
-                                  );
-                                },
+                                  ),
+                                ],
                               ),
-                      ),
-                    ],
-                  ),
+                            ),
+                          )
+                        : Builder(
+                            builder: (context) {
+                              print(
+                                'Building DataTable with ${_savedConfigs.length} rows',
+                              );
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: DataTable(
+                                  columns: const [
+                                    DataColumn(label: Text('ID')),
+                                    DataColumn(label: Text('缓存Key')),
+                                    DataColumn(label: Text('缓存Value')),
+                                    DataColumn(label: Text('过期时间')),
+                                    DataColumn(label: Text('描述')),
+                                    DataColumn(label: Text('创建时间')),
+                                    DataColumn(label: Text('操作')),
+                                  ],
+                                  rows: _savedConfigs.map((config) {
+                                    final configMap =
+                                        config is Map<String, dynamic>
+                                        ? config
+                                        : <String, dynamic>{};
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(
+                                          Text('${configMap['id'] ?? ''}'),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            configMap['cache_key']
+                                                    ?.toString() ??
+                                                '',
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            configMap['cache_value']
+                                                    ?.toString() ??
+                                                '',
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            configMap['expire_time']
+                                                    ?.toString() ??
+                                                '',
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            configMap['description']
+                                                    ?.toString() ??
+                                                '',
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            configMap['created_at'] != null
+                                                ? configMap['created_at']
+                                                      .toString()
+                                                      .substring(0, 19)
+                                                : '',
+                                          ),
+                                        ),
+                                        DataCell(
+                                          IconButton.ghost(
+                                            onPressed: () =>
+                                                _deleteConfig(configMap['id']),
+                                            icon: const Icon(
+                                              BootstrapIcons.trash,
+                                              color: Colors.red,
+                                              size: 18,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              );
+                            },
+                          ),
+                  ],
                 ),
               ),
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
