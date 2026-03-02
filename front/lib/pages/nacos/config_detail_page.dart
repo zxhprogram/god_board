@@ -28,6 +28,17 @@ class _NacosConfigDetailPageState extends State<NacosConfigDetailPage> {
     _loadConfigDetail();
   }
 
+  @override
+  void didUpdateWidget(NacosConfigDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当路由参数变化时重新加载数据
+    if (oldWidget.namespaceId != widget.namespaceId ||
+        oldWidget.group != widget.group ||
+        oldWidget.dataId != widget.dataId) {
+      _loadConfigDetail();
+    }
+  }
+
   Future<void> _loadConfigDetail() async {
     setState(() {
       _isLoading = true;
