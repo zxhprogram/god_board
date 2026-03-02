@@ -1302,7 +1302,7 @@ class _NacosMappingDrawerContentState extends State<NacosMappingDrawerContent> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('关联关系保存成功')));
-        Navigator.of(context).pop();
+        closeOverlay(context);
       }
     } else {
       if (mounted) {
@@ -1330,7 +1330,7 @@ class _NacosMappingDrawerContentState extends State<NacosMappingDrawerContent> {
               ),
               const Spacer(),
               IconButton.ghost(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => closeOverlay(context),
                 icon: const Icon(Icons.close),
               ),
             ],
@@ -1486,7 +1486,7 @@ class _NacosMappingDrawerContentState extends State<NacosMappingDrawerContent> {
           Row(
             children: [
               SecondaryButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => closeOverlay(context),
                 child: const Text('取消'),
               ),
               const Spacer(),
