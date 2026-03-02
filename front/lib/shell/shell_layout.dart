@@ -145,13 +145,13 @@ class _ShellLayoutState extends State<ShellLayout> {
                   'K8S',
                   SimpleIcons.kubernetes,
                   path: '/k8s',
-                  isSelected: location == '/k8s',
+                  isSelected: location.startsWith('/k8s'),
                 ),
                 buildButton(
                   'Nacos',
                   Icons.cloud,
                   path: '/nacos',
-                  isSelected: location == '/nacos',
+                  isSelected: location.startsWith('/nacos'),
                 ),
                 buildButton(
                   '自动巡检',
