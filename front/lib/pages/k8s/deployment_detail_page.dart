@@ -8,8 +8,10 @@ import 'package:flutter/material.dart'
         ScaffoldMessenger,
         SnackBar,
         ListTile,
-        Scaffold;
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Scaffold;
+        Scaffold,
+        ListView;
+import 'package:shadcn_flutter/shadcn_flutter.dart'
+    hide Scaffold, ListTile, ListView;
 
 import '../../services/api_service.dart';
 
@@ -629,7 +631,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        '关联 Nacos 配置',
+                        'Nacos 配置关联',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -673,44 +675,18 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // 显示已关联的配置详情
+                  // 显示已关联的配置摘要
                   if (_linkedNacosConfig != null) ...[
-                    _buildLinkedConfigCard(),
+                    _buildLinkedConfigSummary(),
                     const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '重新选择配置:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                   ],
-                  if (_isLoadingNacosNamespaces)
-                    const Center(child: Text('加载 Nacos Namespaces...'))
-                  else if (_nacosNamespaces.isEmpty)
-                    const Center(
-                      child: Text(
-                        '暂无 Nacos Namespace 数据',
-                        style: TextStyle(color: Colors.gray),
-                      ),
-                    )
-                  else
-                    _buildNacosTreeView(),
-                  const SizedBox(height: 16),
-                  if (_selectedNacosConfigId != null)
-                    ElevatedButton(
-                      onPressed: _isSavingMapping ? null : _saveMapping,
-                      child: _isSavingMapping
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('保存关联'),
+                  // 关联配置按钮
+                  PrimaryButton(
+                    onPressed: () => _showNacosMappingDrawer(),
+                    child: Text(
+                      _existingMapping != null ? '重新关联配置' : '关联 Nacos 配置',
                     ),
+                  ),
                 ],
               ),
             ),
@@ -1116,11 +1092,10 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
     );
   }
 
-  // 构建已关联的 Nacos 配置详情卡片
-  Widget _buildLinkedConfigCard() {
+  // 构建已关联的 Nacos 配置摘要
+  Widget _buildLinkedConfigSummary() {
     final dataId = _linkedNacosConfig!['dataId'] ?? '未知';
     final group = _linkedNacosConfig!['group'] ?? '未知';
-    final content = _linkedNacosConfig!['content'] ?? '';
 
     return Container(
       decoration: BoxDecoration(
@@ -1150,37 +1125,300 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
             const SizedBox(height: 12),
             _buildInfoRow('Data ID', dataId),
             _buildInfoRow('Group', group),
-            const SizedBox(height: 12),
-            const Text(
-              '配置内容:',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              constraints: const BoxConstraints(maxHeight: 400),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.shade200),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(12),
-                child: SelectableText(
-                  content.isEmpty ? '(空配置)' : content,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                    color: content.isEmpty
-                        ? Colors.gray.shade500
-                        : Colors.black,
-                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 显示 Nacos 关联配置 Drawer
+  void _showNacosMappingDrawer() {
+    // 重置选择状态
+    setState(() {
+      _selectedNacosNamespace = null;
+      _selectedNacosConfigId = null;
+    });
+
+    // 加载 namespaces
+    _loadNacosNamespaces();
+
+    openDrawerOverlay(
+      context: context,
+      position: OverlayPosition.right,
+      builder: (context) => Container(
+        width: 480,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Drawer 标题
+            Row(
+              children: [
+                const Text(
+                  '关联 Nacos 配置',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
+                const Spacer(),
+                IconButton.ghost(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            // 内容区域
+            Expanded(
+              child: StatefulBuilder(
+                builder: (context, setDrawerState) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 当前 Deployment 信息
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Deployment: ${widget.deployment}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                'Namespace: ${widget.namespace}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.gray.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 选择 Namespace
+                      const Text(
+                        '选择 Nacos Namespace',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_isLoadingNacosNamespaces)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (_nacosNamespaces.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Text(
+                              '暂无 Nacos Namespace 数据',
+                              style: TextStyle(color: Colors.gray),
+                            ),
+                          ),
+                        )
+                      else
+                        Select<String>(
+                          value: _selectedNacosNamespace,
+                          onChanged: (value) {
+                            setDrawerState(() {
+                              _selectedNacosNamespace = value;
+                              _selectedNacosConfigId = null;
+                            });
+                            if (value != null) {
+                              _loadNacosConfigs(value);
+                            }
+                          },
+                          placeholder: const Text('请选择 Namespace'),
+                          itemBuilder: (context, value) => Text(
+                            _nacosNamespaces.firstWhere(
+                                  (ns) => ns['namespace'] == value,
+                                  orElse: () => {'namespaceShowName': '未知'},
+                                )['namespaceShowName'] ??
+                                '未知',
+                          ),
+                          popup: SelectPopup(
+                            items: SelectItemList(
+                              children: _nacosNamespaces.map<Widget>((ns) {
+                                final namespaceShowName =
+                                    ns['namespaceShowName'] ?? '未知';
+                                final namespace = ns['namespace'] ?? '';
+                                return SelectItem(
+                                  value: namespace,
+                                  builder: (context) => Text(namespaceShowName),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 24),
+
+                      // 选择 Config
+                      if (_selectedNacosNamespace != null) ...[
+                        const Text(
+                          '选择 Nacos 配置',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_isLoadingNacosConfigs[_selectedNacosNamespace] ==
+                            true)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (_nacosConfigs[_selectedNacosNamespace]
+                                ?.isEmpty ??
+                            true)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text(
+                                '该 Namespace 下暂无配置',
+                                style: TextStyle(color: Colors.gray),
+                              ),
+                            ),
+                          )
+                        else
+                          Expanded(
+                            child: Card(
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount:
+                                    _nacosConfigs[_selectedNacosNamespace]
+                                        ?.length ??
+                                    0,
+                                itemBuilder: (context, index) {
+                                  final config =
+                                      _nacosConfigs[_selectedNacosNamespace]![index];
+                                  final dataId = config['dataId'] ?? '未知';
+                                  final group = config['group'] ?? '未知';
+                                  final configId =
+                                      config['id']?.toString() ?? '';
+                                  final isSelected =
+                                      _selectedNacosConfigId == configId;
+
+                                  return ListTile(
+                                    selected: isSelected,
+                                    onTap: () {
+                                      setDrawerState(() {
+                                        _selectedNacosConfigId = configId;
+                                      });
+                                    },
+                                    title: Text(dataId),
+                                    subtitle: Text('Group: $group'),
+                                    trailing: isSelected
+                                        ? Icon(
+                                            Icons.check_circle,
+                                            color: Colors.green.shade600,
+                                          )
+                                        : null,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                      ],
+                    ],
+                  );
+                },
               ),
+            ),
+
+            const Divider(),
+            const SizedBox(height: 16),
+
+            // 底部按钮
+            Row(
+              children: [
+                SecondaryButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('取消'),
+                ),
+                const Spacer(),
+                PrimaryButton(
+                  onPressed: _selectedNacosConfigId == null || _isSavingMapping
+                      ? null
+                      : () async {
+                          await _saveMappingFromDrawer();
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                  child: _isSavingMapping
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('保存关联'),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  // 从 Drawer 保存关联
+  Future<void> _saveMappingFromDrawer() async {
+    if (_selectedNacosNamespace == null || _selectedNacosConfigId == null) {
+      return;
+    }
+
+    setState(() {
+      _isSavingMapping = true;
+    });
+
+    final response = await ApiService.saveK8sNacosMapping(
+      k8sNamespace: widget.namespace,
+      k8sDeployment: widget.deployment,
+      nacosNamespace: _selectedNacosNamespace!,
+      nacosConfigId: _selectedNacosConfigId!,
+    );
+
+    setState(() {
+      _isSavingMapping = false;
+    });
+
+    if (response['code'] == 200) {
+      setState(() {
+        _existingMapping = response['data'] as Map<String, dynamic>;
+      });
+      // 重新加载关联的配置详情
+      if (_selectedNacosNamespace != null && _selectedNacosConfigId != null) {
+        await _loadLinkedNacosConfig(
+          _selectedNacosNamespace!,
+          _selectedNacosConfigId!,
+        );
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('关联关系保存成功')));
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('保存失败: ${response['message']}')));
+      }
+    }
   }
 }
