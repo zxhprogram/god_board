@@ -112,3 +112,24 @@ type CacheMetadataRequest struct {
 	ExpireTime  string `json:"expire_time"`
 	Description string `json:"description"`
 }
+
+// K8sNacosServiceMapping 存储 K8s Deployment 与 Nacos 服务的关联关系
+type K8sNacosServiceMapping struct {
+	ID              uint      `json:"id" gorm:"primaryKey"`
+	K8sNamespace    string    `json:"k8sNamespace" gorm:"not null;index"`
+	K8sDeployment   string    `json:"k8sDeployment" gorm:"not null;index"`
+	NacosNamespace  string    `json:"nacosNamespace" gorm:"not null"`
+	NacosServiceName string   `json:"nacosServiceName" gorm:"not null"`
+	NacosGroupName  string    `json:"nacosGroupName" gorm:"not null;default:'DEFAULT_GROUP'"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+// K8sNacosServiceMappingRequest 保存服务关联关系的请求参数
+type K8sNacosServiceMappingRequest struct {
+	K8sNamespace     string `json:"k8sNamespace" binding:"required"`
+	K8sDeployment    string `json:"k8sDeployment" binding:"required"`
+	NacosNamespace   string `json:"nacosNamespace" binding:"required"`
+	NacosServiceName string `json:"nacosServiceName" binding:"required"`
+	NacosGroupName   string `json:"nacosGroupName"`
+}

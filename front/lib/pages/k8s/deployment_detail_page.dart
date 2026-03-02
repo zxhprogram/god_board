@@ -36,7 +36,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
   List<dynamic> _matchedServices = [];
   bool _isLoadingServices = true;
 
-  // Nacos 关联相关状态
+  // Nacos 配置关联相关状态
   List<dynamic> _nacosNamespaces = [];
   bool _isLoadingNacosNamespaces = false;
   final Map<String, List<dynamic>> _nacosConfigs = {};
@@ -47,6 +47,13 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
   Map<String, dynamic>? _linkedNacosConfig; // 已关联的 Nacos 配置详情
   bool _isLoadingMapping = true;
   bool _isSavingMapping = false;
+
+  // Nacos 服务关联相关状态
+  Map<String, dynamic>? _existingServiceMapping;
+  Map<String, dynamic>? _linkedNacosService; // 已关联的 Nacos 服务详情
+  List<dynamic> _nacosServiceInstances = []; // 服务实例列表
+  bool _isLoadingServiceMapping = true;
+  bool _isSavingServiceMapping = false;
 
   @override
   void initState() {
@@ -69,10 +76,14 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
       _isLoading = true;
       _isLoadingServices = true;
       _isLoadingMapping = true;
+      _isLoadingServiceMapping = true;
       _matchedServices = [];
       _deploymentData = null;
       _existingMapping = null;
       _linkedNacosConfig = null;
+      _existingServiceMapping = null;
+      _linkedNacosService = null;
+      _nacosServiceInstances = [];
       // 重置 Nacos 相关状态
       _nacosNamespaces = [];
       _nacosConfigs.clear();
@@ -85,6 +96,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
     if (_deploymentData != null) {
       await _loadMatchedServices();
       await _loadExistingMapping();
+      await _loadExistingServiceMapping();
     }
   }
 
@@ -137,6 +149,64 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
     if (response['code'] == 200 && response['data'] != null) {
       setState(() {
         _linkedNacosConfig = response['data'] as Map<String, dynamic>;
+      });
+    }
+  }
+
+  // 加载已存在的服务关联关系
+  Future<void> _loadExistingServiceMapping() async {
+    final response = await ApiService.getK8sNacosServiceMapping(
+      k8sNamespace: widget.namespace,
+      k8sDeployment: widget.deployment,
+    );
+
+    if (response['code'] == 200 && response['data'] != null) {
+      setState(() {
+        _existingServiceMapping = response['data'] as Map<String, dynamic>;
+        _isLoadingServiceMapping = false;
+      });
+      // 加载已关联的 Nacos 服务实例
+      final nacosNamespace =
+          _existingServiceMapping!['nacosNamespace'] as String?;
+      final nacosServiceName =
+          _existingServiceMapping!['nacosServiceName'] as String?;
+      final nacosGroupName =
+          _existingServiceMapping!['nacosGroupName'] as String?;
+      if (nacosNamespace != null && nacosServiceName != null) {
+        await _loadNacosServiceInstances(
+          nacosNamespace,
+          nacosServiceName,
+          nacosGroupName,
+        );
+      }
+    } else {
+      setState(() {
+        _isLoadingServiceMapping = false;
+      });
+    }
+  }
+
+  // 加载 Nacos 服务实例列表
+  Future<void> _loadNacosServiceInstances(
+    String namespace,
+    String serviceName,
+    String? groupName,
+  ) async {
+    final response = await ApiService.getNacosServiceInstances(
+      namespace: namespace,
+      serviceName: serviceName,
+      groupName: groupName,
+    );
+
+    if (response['code'] == 200 && response['data'] != null) {
+      final data = response['data'] as Map<String, dynamic>;
+      setState(() {
+        _nacosServiceInstances = data['list'] as List<dynamic>? ?? [];
+        _linkedNacosService = {
+          'namespace': namespace,
+          'serviceName': serviceName,
+          'groupName': groupName ?? 'DEFAULT_GROUP',
+        };
       });
     }
   }
@@ -687,11 +757,237 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
                       _existingMapping != null ? '重新关联配置' : '关联 Nacos 配置',
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  // Nacos 服务关联
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Nacos 服务关联',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (_isLoadingServiceMapping)
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else if (_existingServiceMapping != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 14,
+                                color: Colors.green.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '已关联',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // 显示已关联的服务摘要和实例列表
+                  if (_linkedNacosService != null) ...[
+                    _buildLinkedServiceSummary(),
+                    const SizedBox(height: 16),
+                  ],
+                  // 关联服务按钮
+                  PrimaryButton(
+                    onPressed: () => _showNacosServiceMappingDrawer(),
+                    child: Text(
+                      _existingServiceMapping != null
+                          ? '重新关联服务'
+                          : '关联 Nacos 服务',
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // 构建已关联的 Nacos 服务摘要和实例列表
+  Widget _buildLinkedServiceSummary() {
+    final serviceName = _linkedNacosService?['serviceName'] ?? '未知';
+    final groupName = _linkedNacosService?['groupName'] ?? 'DEFAULT_GROUP';
+    final namespace = _linkedNacosService?['namespace'] ?? '';
+    final namespaceName =
+        _nacosNamespaces.firstWhere(
+          (ns) => ns['namespace'] == namespace,
+          orElse: () => {'namespaceShowName': namespace},
+        )['namespaceShowName'] ??
+        namespace;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.cloud, color: Colors.blue.shade700, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '已关联的 Nacos 服务',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow('服务名', serviceName),
+            _buildInfoRow('分组', groupName),
+            _buildInfoRow('Namespace', namespaceName),
+            const SizedBox(height: 12),
+            // 服务实例列表
+            Text(
+              '服务实例 (${_nacosServiceInstances.length}个)',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.blue.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (_nacosServiceInstances.isEmpty)
+              const Text(
+                '暂无实例',
+                style: TextStyle(color: Colors.gray, fontSize: 12),
+              )
+            else
+              Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: _nacosServiceInstances.map<Widget>((instance) {
+                      final ip = instance['ip'] ?? '-';
+                      final port = instance['port'] ?? '-';
+                      final healthy = instance['healthy'] ?? false;
+                      final weight = instance['weight'] ?? 1.0;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: healthy
+                                  ? Colors.green.shade200
+                                  : Colors.red.shade200,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.dns,
+                                size: 16,
+                                color: healthy
+                                    ? Colors.green.shade600
+                                    : Colors.red.shade600,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '$ip:$port',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      '权重: $weight | 健康: ${healthy ? "是" : "否"}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: healthy
+                                            ? Colors.green.shade600
+                                            : Colors.red.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 显示 Nacos 服务关联 Drawer
+  void _showNacosServiceMappingDrawer() {
+    openDrawerOverlay(
+      context: context,
+      position: OverlayPosition.right,
+      builder: (context) => NacosServiceMappingDrawerContent(
+        deployment: widget.deployment,
+        namespace: widget.namespace,
+        existingMapping: _existingServiceMapping,
+        onSave: (nacosNamespace, nacosServiceName, nacosGroupName) async {
+          final response = await ApiService.saveK8sNacosServiceMapping(
+            k8sNamespace: widget.namespace,
+            k8sDeployment: widget.deployment,
+            nacosNamespace: nacosNamespace,
+            nacosServiceName: nacosServiceName,
+            nacosGroupName: nacosGroupName,
+          );
+          if (response['code'] == 200) {
+            setState(() {
+              _existingServiceMapping =
+                  response['data'] as Map<String, dynamic>;
+            });
+            // 加载服务实例
+            await _loadNacosServiceInstances(
+              nacosNamespace,
+              nacosServiceName,
+              nacosGroupName,
+            );
+          }
+          return response;
+        },
       ),
     );
   }
@@ -1547,6 +1843,406 @@ class _NacosMappingDrawerContentState extends State<NacosMappingDrawerContent> {
               const Spacer(),
               PrimaryButton(
                 onPressed: _selectedNacosConfigId == null || _isSavingMapping
+                    ? null
+                    : _saveMapping,
+                child: _isSavingMapping
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('保存关联'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Nacos 服务关联 Drawer 内容组件
+class NacosServiceMappingDrawerContent extends StatefulWidget {
+  final String deployment;
+  final String namespace;
+  final Map<String, dynamic>? existingMapping;
+  final Future<Map<String, dynamic>> Function(
+    String nacosNamespace,
+    String nacosServiceName,
+    String? nacosGroupName,
+  )?
+  onSave;
+
+  const NacosServiceMappingDrawerContent({
+    super.key,
+    required this.deployment,
+    required this.namespace,
+    this.existingMapping,
+    this.onSave,
+  });
+
+  @override
+  State<NacosServiceMappingDrawerContent> createState() =>
+      _NacosServiceMappingDrawerContentState();
+}
+
+class _NacosServiceMappingDrawerContentState
+    extends State<NacosServiceMappingDrawerContent> {
+  List<dynamic> _nacosNamespaces = [];
+  bool _isLoadingNacosNamespaces = true;
+  List<dynamic> _nacosServices = [];
+  bool _isLoadingNacosServices = false;
+  String? _selectedNacosNamespace;
+  String? _selectedNacosServiceName;
+  bool _isSavingMapping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNacosNamespaces();
+    // 如果已有映射，设置初始值
+    if (widget.existingMapping != null) {
+      _selectedNacosNamespace = widget.existingMapping!['nacosNamespace'];
+      _selectedNacosServiceName = widget.existingMapping!['nacosServiceName'];
+    }
+  }
+
+  Future<void> _loadNacosNamespaces() async {
+    setState(() {
+      _isLoadingNacosNamespaces = true;
+    });
+
+    // 先调用 Nacos 登录
+    final loginResponse = await ApiService.nacosLogin();
+    if (loginResponse['code'] != 200) {
+      setState(() {
+        _isLoadingNacosNamespaces = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Nacos 登录失败: ${loginResponse['message']}')),
+        );
+      }
+      return;
+    }
+
+    final response = await ApiService.getNacosNamespaces();
+
+    if (response['code'] == 200 && response['data'] != null) {
+      final data = response['data'];
+      if (data is List<dynamic>) {
+        setState(() {
+          _nacosNamespaces = data;
+          _isLoadingNacosNamespaces = false;
+        });
+      } else {
+        setState(() {
+          _nacosNamespaces = [];
+          _isLoadingNacosNamespaces = false;
+        });
+      }
+    } else {
+      setState(() {
+        _nacosNamespaces = [];
+        _isLoadingNacosNamespaces = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('获取 Namespace 失败: ${response['message'] ?? '未知错误'}'),
+          ),
+        );
+      }
+    }
+
+    // 如果已有选中的 namespace，加载服务列表
+    if (_selectedNacosNamespace != null) {
+      await _loadNacosServices(_selectedNacosNamespace!);
+    }
+  }
+
+  Future<void> _loadNacosServices(String namespace) async {
+    setState(() {
+      _isLoadingNacosServices = true;
+      _nacosServices = [];
+    });
+
+    final response = await ApiService.getNacosServices(namespace);
+
+    if (response['code'] == 200 && response['data'] != null) {
+      final data = response['data'] as Map<String, dynamic>;
+      final serviceList = data['serviceList'] as List<dynamic>? ?? [];
+      setState(() {
+        _nacosServices = serviceList;
+        _isLoadingNacosServices = false;
+      });
+    } else {
+      setState(() {
+        _nacosServices = [];
+        _isLoadingNacosServices = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('获取服务列表失败: ${response['message'] ?? '未知错误'}')),
+        );
+      }
+    }
+  }
+
+  Future<void> _saveMapping() async {
+    if (_selectedNacosNamespace == null || _selectedNacosServiceName == null) {
+      return;
+    }
+
+    setState(() {
+      _isSavingMapping = true;
+    });
+
+    try {
+      if (widget.onSave != null) {
+        final response = await widget.onSave!(
+          _selectedNacosNamespace!,
+          _selectedNacosServiceName!,
+          'DEFAULT_GROUP',
+        );
+
+        if (response['code'] == 200) {
+          if (mounted) {
+            closeOverlay(context);
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('关联保存成功')));
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('保存失败: ${response['message'] ?? '未知错误'}')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('保存失败: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingMapping = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 450,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 标题
+          Row(
+            children: [
+              Icon(Icons.cloud, color: Colors.blue.shade600),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  '关联 Nacos 服务',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              GhostButton(
+                onPressed: () => closeOverlay(context),
+                child: const Icon(Icons.close),
+              ),
+            ],
+          ),
+          const Divider(),
+          const SizedBox(height: 16),
+
+          // 显示当前 Deployment 信息
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Deployment: ${widget.deployment}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    'Namespace: ${widget.namespace}',
+                    style: TextStyle(fontSize: 12, color: Colors.gray.shade500),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 选择 Namespace
+          const Text(
+            '选择 Nacos Namespace',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          if (_isLoadingNacosNamespaces)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_nacosNamespaces.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  '暂无 Nacos Namespace 数据',
+                  style: TextStyle(color: Colors.gray),
+                ),
+              ),
+            )
+          else
+            Select<String>(
+              value: _selectedNacosNamespace,
+              onChanged: (value) {
+                setState(() {
+                  _selectedNacosNamespace = value;
+                  _selectedNacosServiceName = null;
+                });
+                if (value != null) {
+                  _loadNacosServices(value);
+                }
+              },
+              placeholder: const Text('请选择 Namespace'),
+              itemBuilder: (context, value) => Text(
+                _nacosNamespaces.firstWhere(
+                      (ns) => ns['namespace'] == value,
+                      orElse: () => {'namespaceShowName': '未知'},
+                    )['namespaceShowName'] ??
+                    '未知',
+              ),
+              popup: (context) => SelectPopup(
+                items: SelectItemList(
+                  children: _nacosNamespaces.map<Widget>((ns) {
+                    final namespaceShowName = ns['namespaceShowName'] ?? '未知';
+                    final namespace = ns['namespace'] ?? '';
+                    return SelectItemButton<String>(
+                      value: namespace,
+                      child: Text(namespaceShowName),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 24),
+
+          // 选择 Service
+          if (_selectedNacosNamespace != null) ...[
+            const Text(
+              '选择 Nacos 服务',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            if (_isLoadingNacosServices)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_nacosServices.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    '该 Namespace 下暂无服务',
+                    style: TextStyle(color: Colors.gray),
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: Card(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _nacosServices.length,
+                    itemBuilder: (context, index) {
+                      final service = _nacosServices[index];
+                      final name = service['name'] ?? '未知';
+                      final groupName = service['groupName'] ?? 'DEFAULT_GROUP';
+                      final ipCount = service['ipCount'] ?? 0;
+                      final healthyCount = service['healthyInstanceCount'] ?? 0;
+                      final isSelected = _selectedNacosServiceName == name;
+
+                      return ListTile(
+                        selected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            _selectedNacosServiceName = name;
+                          });
+                        },
+                        leading: Icon(
+                          Icons.dns,
+                          color: isSelected ? Colors.blue : Colors.gray,
+                        ),
+                        title: Text(name),
+                        subtitle: Text('Group: $groupName'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '$healthyCount/$ipCount',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            if (isSelected)
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green.shade600,
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+          ],
+
+          const Divider(),
+          const SizedBox(height: 16),
+
+          // 底部按钮
+          Row(
+            children: [
+              SecondaryButton(
+                onPressed: () => closeOverlay(context),
+                child: const Text('取消'),
+              ),
+              const Spacer(),
+              PrimaryButton(
+                onPressed: _selectedNacosServiceName == null || _isSavingMapping
                     ? null
                     : _saveMapping,
                 child: _isSavingMapping

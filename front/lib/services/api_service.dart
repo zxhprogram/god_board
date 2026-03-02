@@ -263,6 +263,29 @@ class ApiService {
     }
   }
 
+  // 获取 Nacos 服务实例列表
+  static Future<Map<String, dynamic>> getNacosServiceInstances({
+    required String namespace,
+    required String serviceName,
+    String? groupName,
+  }) async {
+    try {
+      var url =
+          '$baseUrl/api/nacos/instances?namespaceId=$namespace&serviceName=$serviceName';
+      if (groupName != null && groupName.isNotEmpty) {
+        url += '&groupName=$groupName';
+      }
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
   // 获取 K8s 与 Nacos 的关联关系
   static Future<Map<String, dynamic>> getK8sNacosMapping({
     required String k8sNamespace,
@@ -580,6 +603,52 @@ class ApiService {
           'password': password,
           'database': database,
         }),
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 保存 K8s Deployment 与 Nacos 服务的关联关系
+  static Future<Map<String, dynamic>> saveK8sNacosServiceMapping({
+    required String k8sNamespace,
+    required String k8sDeployment,
+    required String nacosNamespace,
+    required String nacosServiceName,
+    String? nacosGroupName,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/mappings/k8s-nacos-service'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'k8sNamespace': k8sNamespace,
+          'k8sDeployment': k8sDeployment,
+          'nacosNamespace': nacosNamespace,
+          'nacosServiceName': nacosServiceName,
+          'nacosGroupName': nacosGroupName ?? 'DEFAULT_GROUP',
+        }),
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 获取 K8s Deployment 与 Nacos 服务的关联关系
+  static Future<Map<String, dynamic>> getK8sNacosServiceMapping({
+    required String k8sNamespace,
+    required String k8sDeployment,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '$baseUrl/api/mappings/k8s-nacos-service?k8sNamespace=$k8sNamespace&k8sDeployment=$k8sDeployment',
+        ),
+        headers: {'Content-Type': 'application/json'},
       );
 
       return jsonDecode(response.body);

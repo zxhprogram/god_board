@@ -342,7 +342,7 @@ func HandleGetServices(c *gin.Context) {
 
 	namespaceID := c.Query("namespaceId")
 	pageNo := c.DefaultQuery("pageNo", "1")
-	pageSize := c.DefaultQuery("pageSize", "10")
+	pageSize := c.DefaultQuery("pageSize", "1000")
 	url := fmt.Sprintf("%s/nacos/v1/ns/catalog/services?hasIpCount=true&withInstances=false&pageNo=%s&pageSize=%s&serviceNameParam=&groupNameParam=&accessToken=%s&namespaceId=%s",
 		nacosConfig.Address, pageNo, pageSize, accessToken, namespaceID)
 

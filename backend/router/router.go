@@ -33,10 +33,14 @@ func SetupRouter() *gin.Engine {
 	r.POST("/api/configs/nodeserver", handlers.HandleSaveNodeServerConfig)
 	r.GET("/api/configs/nodeserver", handlers.HandleGetNodeServerConfig)
 
-	// K8s 与 Nacos 关联关系路由
+	// K8s 与 Nacos 配置关联关系路由
 	r.POST("/api/mappings/k8s-nacos", handlers.HandleSaveK8sNacosMapping)
 	r.GET("/api/mappings/k8s-nacos", handlers.HandleGetK8sNacosMapping)
 	r.DELETE("/api/mappings/k8s-nacos", handlers.HandleDeleteK8sNacosMapping)
+
+	// K8s 与 Nacos 服务关联关系路由
+	r.POST("/api/mappings/k8s-nacos-service", handlers.HandleSaveK8sNacosServiceMapping)
+	r.GET("/api/mappings/k8s-nacos-service", handlers.HandleGetK8sNacosServiceMapping)
 
 	// 新大陆网关配置路由
 	r.GET("/api/configs/newland/9894", handlers.HandleGetNewland9894Config)
