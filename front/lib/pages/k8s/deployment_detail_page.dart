@@ -1096,6 +1096,14 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
   Widget _buildLinkedConfigSummary() {
     final dataId = _linkedNacosConfig!['dataId'] ?? '未知';
     final group = _linkedNacosConfig!['group'] ?? '未知';
+    final content = _linkedNacosConfig!['content'] ?? '';
+    final namespaceId = _linkedNacosConfig!['tenant'] ?? '';
+    final namespaceName =
+        _nacosNamespaces.firstWhere(
+          (ns) => ns['namespace'] == namespaceId,
+          orElse: () => {'namespaceShowName': namespaceId},
+        )['namespaceShowName'] ??
+        namespaceId;
 
     return Container(
       decoration: BoxDecoration(
@@ -1125,6 +1133,53 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
             const SizedBox(height: 12),
             _buildInfoRow('Data ID', dataId),
             _buildInfoRow('Group', group),
+            _buildInfoRow('Namespace', namespaceName),
+            const SizedBox(height: 12),
+            // 配置内容
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.green.shade100),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.code, size: 14, color: Colors.green.shade600),
+                      const SizedBox(width: 4),
+                      Text(
+                        '配置内容',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        content.isEmpty ? '（空配置）' : content,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'monospace',
+                          color: content.isEmpty
+                              ? Colors.gray.shade400
+                              : Colors.gray.shade900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
