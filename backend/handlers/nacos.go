@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"god-board/config"
 	"god-board/db"
 	"god-board/models"
 
@@ -104,7 +103,19 @@ func HandleGetNamespaces(c *gin.Context) {
 		return
 	}
 
-	url := fmt.Sprintf("%s/nacos/v1/console/namespaces?accessToken=%s", config.NacosServer, accessToken)
+	// 从数据库获取 Nacos 配置
+	var nacosConfig models.NacosConfig
+	result := db.DB.First(&nacosConfig)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Code:    500,
+			Message: "未找到 Nacos 服务器配置，请先配置服务器",
+			Data:    nil,
+		})
+		return
+	}
+
+	url := fmt.Sprintf("%s/nacos/v1/console/namespaces?accessToken=%s", nacosConfig.Address, accessToken)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -164,13 +175,25 @@ func HandleGetConfigs(c *gin.Context) {
 		return
 	}
 
+	// 从数据库获取 Nacos 配置
+	var nacosConfig models.NacosConfig
+	result := db.DB.First(&nacosConfig)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Code:    500,
+			Message: "未找到 Nacos 服务器配置，请先配置服务器",
+			Data:    nil,
+		})
+		return
+	}
+
 	namespaceID := c.Query("namespaceId")
 	pageNo := c.DefaultQuery("pageNo", "1")
 	pageSize := c.DefaultQuery("pageSize", "1000")
-	dataID := c.Query("dataId")
+	dataID := c.Query("dataID")
 	group := c.Query("group")
 	url := fmt.Sprintf("%s/nacos/v1/cs/configs?dataId=%s&group=%s&appName=&config_tags=&pageNo=%s&pageSize=%s&tenant=%s&search=blur&accessToken=%s&username=nacos",
-		config.NacosServer, dataID, group, pageNo, pageSize, namespaceID, accessToken)
+		nacosConfig.Address, dataID, group, pageNo, pageSize, namespaceID, accessToken)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -231,11 +254,23 @@ func HandleGetServices(c *gin.Context) {
 		return
 	}
 
+	// 从数据库获取 Nacos 配置
+	var nacosConfig models.NacosConfig
+	result := db.DB.First(&nacosConfig)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Code:    500,
+			Message: "未找到 Nacos 服务器配置，请先配置服务器",
+			Data:    nil,
+		})
+		return
+	}
+
 	namespaceID := c.Query("namespaceId")
 	pageNo := c.DefaultQuery("pageNo", "1")
 	pageSize := c.DefaultQuery("pageSize", "10")
 	url := fmt.Sprintf("%s/nacos/v1/ns/catalog/services?hasIpCount=true&withInstances=false&pageNo=%s&pageSize=%s&serviceNameParam=&groupNameParam=&accessToken=%s&namespaceId=%s",
-		config.NacosServer, pageNo, pageSize, accessToken, namespaceID)
+		nacosConfig.Address, pageNo, pageSize, accessToken, namespaceID)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -296,6 +331,18 @@ func HandleInstances(c *gin.Context) {
 		return
 	}
 
+	// 从数据库获取 Nacos 配置
+	var nacosConfig models.NacosConfig
+	result := db.DB.First(&nacosConfig)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Code:    500,
+			Message: "未找到 Nacos 服务器配置，请先配置服务器",
+			Data:    nil,
+		})
+		return
+	}
+
 	namespaceID := c.Query("namespaceId")
 	serviceName := c.Query("serviceName")
 	clusterName := c.DefaultQuery("clusterName", "DEFAULT")
@@ -304,7 +351,7 @@ func HandleInstances(c *gin.Context) {
 	pageSize := c.DefaultQuery("pageSize", "10")
 
 	url := fmt.Sprintf("%s/nacos/v1/ns/catalog/instances?accessToken=%s&serviceName=%s&clusterName=%s&groupName=%s&pageSize=%s&pageNo=%s&namespaceId=%s",
-		config.NacosServer, accessToken, serviceName, clusterName, groupName, pageSize, pageNo, namespaceID)
+		nacosConfig.Address, accessToken, serviceName, clusterName, groupName, pageSize, pageNo, namespaceID)
 
 	resp, err := http.Get(url)
 	if err != nil {
