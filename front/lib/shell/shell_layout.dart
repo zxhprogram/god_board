@@ -100,6 +100,13 @@ class _ShellLayoutState extends State<ShellLayout> {
                                   context.go('/storage-config');
                                 },
                               ),
+                              MenuButton(
+                                leading: const Icon(Icons.cached),
+                                child: const Text('Cache Metadata'),
+                                onPressed: (ctx) {
+                                  context.go('/cache-metadata-config');
+                                },
+                              ),
                               const MenuDivider(),
                               MenuButton(
                                 leading: const Icon(Icons.person),

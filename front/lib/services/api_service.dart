@@ -330,6 +330,59 @@ class ApiService {
     }
   }
 
+  // 获取缓存元数据配置列表
+  static Future<Map<String, dynamic>> getCacheMetadataConfigs() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/cache-metadata'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 保存缓存元数据配置
+  static Future<Map<String, dynamic>> saveCacheMetadataConfig({
+    required String cacheKey,
+    required String cacheValue,
+    required String expireTime,
+    String? description,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/cache-metadata'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'cache_key': cacheKey,
+          'cache_value': cacheValue,
+          'expire_time': expireTime,
+          'description': description ?? '',
+        }),
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 删除缓存元数据配置
+  static Future<Map<String, dynamic>> deleteCacheMetadataConfig(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/cache-metadata/$id'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
   // 启动日志流（调用 node-server 的接口）
   static Future<Map<String, dynamic>> startLogStream({
     required String namespace,

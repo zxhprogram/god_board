@@ -15,6 +15,7 @@ import 'pages/nacos/nacos_shell.dart';
 import 'pages/nacos/namespace_detail_page.dart';
 import 'pages/nacos/config_detail_page.dart';
 import 'pages/nacos/service_detail_page.dart';
+import 'pages/cache_metadata_config_page.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -148,6 +149,11 @@ final GoRouter router = GoRouter(
               },
             ),
           ],
+        ),
+        // 缓存元数据配置页面
+        GoRoute(
+          path: '/cache-metadata-config',
+          builder: (context, state) => const CacheMetadataConfigPage(),
         ),
       ],
     ),

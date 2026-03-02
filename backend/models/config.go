@@ -73,23 +73,42 @@ type Newland9895Config struct {
 
 // RedisConfig 存储 Redis 服务配置
 type RedisConfig struct {
-	ID       uint   `json:"id" gorm:"primaryKey"`
-	Host     string `json:"host" gorm:"not null"`
-	Port     int    `json:"port" gorm:"not null"`
-	IsCluster bool  `json:"is_cluster" gorm:"default:false"`
-	Password string `json:"password"`
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	Host      string    `json:"host" gorm:"not null"`
+	Port      int       `json:"port" gorm:"not null"`
+	IsCluster bool      `json:"is_cluster" gorm:"default:false"`
+	Password  string    `json:"password"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // MySQLConfig 存储 MySQL 服务配置
 type MySQLConfig struct {
-	ID         uint   `json:"id" gorm:"primaryKey"`
-	Host       string `json:"host" gorm:"not null"`
-	Port       int    `json:"port" gorm:"not null"`
-	Username   string `json:"username" gorm:"not null"`
-	Password   string `json:"password" gorm:"not null"`
-	Database   string `json:"database" gorm:"not null"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID        uint      `json:"id" gorm:"primaryKey"`
+	Host      string    `json:"host" gorm:"not null"`
+	Port      int       `json:"port" gorm:"not null"`
+	Username  string    `json:"username" gorm:"not null"`
+	Password  string    `json:"password" gorm:"not null"`
+	Database  string    `json:"database" gorm:"not null"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// CacheMetadataConfig 存储缓存元数据配置
+type CacheMetadataConfig struct {
+	ID          uint      `json:"id" gorm:"primaryKey"`
+	CacheKey    string    `json:"cache_key" gorm:"not null;uniqueIndex"`
+	CacheValue  string    `json:"cache_value" gorm:"not null"` // 缓存值
+	ExpireTime  string    `json:"expire_time" gorm:"not null"` // 过期时间，固定值 2099-12-31 00:00:00
+	Description string    `json:"description"`                 // 描述说明
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// CacheMetadataRequest 保存缓存元数据配置的请求参数
+type CacheMetadataRequest struct {
+	CacheKey    string `json:"cache_key" binding:"required"`
+	CacheValue  string `json:"cache_value" binding:"required"`
+	ExpireTime  string `json:"expire_time"`
+	Description string `json:"description"`
 }

@@ -50,6 +50,11 @@ func SetupRouter() *gin.Engine {
 	r.GET("/api/configs/mysql", handlers.GetMySQLConfig)
 	r.POST("/api/configs/mysql", handlers.SaveMySQLConfig)
 
+	// 缓存元数据配置路由
+	r.GET("/api/cache-metadata", handlers.HandleGetCacheMetadataConfigs)
+	r.POST("/api/cache-metadata", handlers.HandleSaveCacheMetadataConfig)
+	r.DELETE("/api/cache-metadata/:id", handlers.HandleDeleteCacheMetadataConfig)
+
 	return r
 }
 
