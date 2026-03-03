@@ -283,87 +283,87 @@ class _NewlandGatewayCheckPageState extends State<NewlandGatewayCheckPage> {
     return Scaffold(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 页面标题
-            const Text(
-              '新大陆网关配置检查',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '检查缓存元数据在 Redis 中的一致性',
-              style: TextStyle(fontSize: 14, color: Colors.gray),
-            ),
-            const SizedBox(height: 24),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 页面标题
+              const Text(
+                '新大陆网关配置检查',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '检查缓存元数据在 Redis 中的一致性',
+                style: TextStyle(fontSize: 14, color: Colors.gray),
+              ),
+              const SizedBox(height: 24),
 
-            // Redis 配置卡片
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.database, color: Colors.blue),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Redis 连接配置',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _redisHost.isEmpty
-                                ? '未配置'
-                                : '$_redisHost:$_redisPort${_isCluster ? " (集群)" : ""}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.gray.shade500,
+              // Redis 配置卡片
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.database, color: Colors.blue),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Redis 连接配置',
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              _redisHost.isEmpty
+                                  ? '未配置'
+                                  : '$_redisHost:$_redisPort${_isCluster ? " (集群)" : ""}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.gray.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    SecondaryButton(
-                      onPressed: _showRedisConfigDialog,
-                      child: const Text('配置'),
-                    ),
-                  ],
+                      SecondaryButton(
+                        onPressed: _showRedisConfigDialog,
+                        child: const Text('配置'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // 操作按钮
-            Row(
-              children: [
-                PrimaryButton(
-                  onPressed: _isCheckingAll || _checkResults.isEmpty
-                      ? null
-                      : _checkAllItems,
-                  child: _isCheckingAll
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('全部检测'),
-                ),
-                const SizedBox(width: 12),
-                SecondaryButton(
-                  onPressed: _isLoading ? null : _loadData,
-                  child: const Text('刷新数据'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+              // 操作按钮
+              Row(
+                children: [
+                  PrimaryButton(
+                    onPressed: _isCheckingAll || _checkResults.isEmpty
+                        ? null
+                        : _checkAllItems,
+                    child: _isCheckingAll
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('全部检测'),
+                  ),
+                  const SizedBox(width: 12),
+                  SecondaryButton(
+                    onPressed: _isLoading ? null : _loadData,
+                    child: const Text('刷新数据'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
 
-            // 检查结果表格
-            Expanded(
-              child: _isLoading
+              // 检查结果表格
+              _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _checkResults.isEmpty
                   ? const Center(
@@ -373,6 +373,7 @@ class _NewlandGatewayCheckPageState extends State<NewlandGatewayCheckPage> {
                       ),
                     )
                   : SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
                       child: DataTable(
                         columns: const [
                           DataColumn(label: Text('ID')),
@@ -485,8 +486,8 @@ class _NewlandGatewayCheckPageState extends State<NewlandGatewayCheckPage> {
                         }).toList(),
                       ),
                     ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
