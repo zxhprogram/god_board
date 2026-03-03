@@ -16,6 +16,7 @@ import 'pages/nacos/namespace_detail_page.dart';
 import 'pages/nacos/config_detail_page.dart';
 import 'pages/nacos/service_detail_page.dart';
 import 'pages/cache_metadata_config_page.dart';
+import 'pages/industry_mongo_auth_config_page.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
@@ -154,6 +155,11 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/cache-metadata-config',
           builder: (context, state) => const CacheMetadataConfigPage(),
+        ),
+        // 行业调用mongo授权配置页面
+        GoRoute(
+          path: '/industry-mongo-auth-config',
+          builder: (context, state) => const IndustryMongoAuthConfigPage(),
         ),
       ],
     ),

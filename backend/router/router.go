@@ -2,6 +2,7 @@ package router
 
 import (
 	"god-board/config"
+	"god-board/db"
 	"god-board/handlers"
 
 	"github.com/gin-gonic/gin"
@@ -62,6 +63,20 @@ func SetupRouter() *gin.Engine {
 	// Redis查询路由
 	r.POST("/api/redis/query", handlers.HandleRedisQuery)
 	r.POST("/api/redis/query/batch", handlers.HandleRedisQueryBatch)
+
+	// 行业调用mongo授权配置路由
+	r.GET("/api/industry-mongo-auth", func(c *gin.Context) {
+		handlers.GetIndustryMongoAuthConfig(c, db.DB)
+	})
+	r.GET("/api/industry-mongo-auth/list", func(c *gin.Context) {
+		handlers.GetIndustryMongoAuthConfigs(c, db.DB)
+	})
+	r.POST("/api/industry-mongo-auth", func(c *gin.Context) {
+		handlers.SaveIndustryMongoAuthConfig(c, db.DB)
+	})
+	r.DELETE("/api/industry-mongo-auth/:id", func(c *gin.Context) {
+		handlers.DeleteIndustryMongoAuthConfig(c, db.DB)
+	})
 
 	return r
 }

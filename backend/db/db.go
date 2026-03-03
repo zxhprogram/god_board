@@ -18,7 +18,7 @@ func InitDB() {
 	}
 
 	// Auto migrate models
-	err = DB.AutoMigrate(&models.K8sConfig{}, &models.NacosConfig{}, &models.K8sNacosMapping{}, &models.K8sNacosServiceMapping{}, &models.NodeServerConfig{}, &models.Newland9894Config{}, &models.Newland9895Config{}, &models.RedisConfig{}, &models.MySQLConfig{}, &models.CacheMetadataConfig{})
+	err = DB.AutoMigrate(&models.K8sConfig{}, &models.NacosConfig{}, &models.K8sNacosMapping{}, &models.K8sNacosServiceMapping{}, &models.NodeServerConfig{}, &models.Newland9894Config{}, &models.Newland9895Config{}, &models.RedisConfig{}, &models.MySQLConfig{}, &models.CacheMetadataConfig{}, &models.IndustryMongoAuthConfig{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}

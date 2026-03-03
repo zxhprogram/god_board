@@ -687,4 +687,73 @@ class ApiService {
       return {'code': 500, 'message': '请求失败: $e', 'data': null};
     }
   }
+
+  // 获取行业调用mongo授权配置
+  static Future<Map<String, dynamic>> getIndustryMongoAuthConfig() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/industry-mongo-auth'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 保存行业调用mongo授权配置
+  static Future<Map<String, dynamic>> saveIndustryMongoAuthConfig({
+    int? id,
+    required String cacheKey,
+    required String cacheValue,
+    String? description,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/industry-mongo-auth'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id': id,
+          'cache_key': cacheKey,
+          'cache_value': cacheValue,
+          'description': description ?? '',
+        }),
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 获取所有行业调用mongo授权配置
+  static Future<Map<String, dynamic>> getIndustryMongoAuthConfigs() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/industry-mongo-auth/list'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 删除行业调用mongo授权配置
+  static Future<Map<String, dynamic>> deleteIndustryMongoAuthConfig(
+    int id,
+  ) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/industry-mongo-auth/$id'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
 }

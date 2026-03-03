@@ -107,6 +107,13 @@ class _ShellLayoutState extends State<ShellLayout> {
                                   context.go('/cache-metadata-config');
                                 },
                               ),
+                              MenuButton(
+                                leading: const Icon(Icons.key),
+                                child: const Text('Industry Mongo Auth'),
+                                onPressed: (ctx) {
+                                  context.go('/industry-mongo-auth-config');
+                                },
+                              ),
                               const MenuDivider(),
                               MenuButton(
                                 leading: const Icon(Icons.person),

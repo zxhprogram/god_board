@@ -115,14 +115,14 @@ type CacheMetadataRequest struct {
 
 // K8sNacosServiceMapping 存储 K8s Deployment 与 Nacos 服务的关联关系
 type K8sNacosServiceMapping struct {
-	ID              uint      `json:"id" gorm:"primaryKey"`
-	K8sNamespace    string    `json:"k8sNamespace" gorm:"not null;index"`
-	K8sDeployment   string    `json:"k8sDeployment" gorm:"not null;index"`
-	NacosNamespace  string    `json:"nacosNamespace" gorm:"not null"`
-	NacosServiceName string   `json:"nacosServiceName" gorm:"not null"`
-	NacosGroupName  string    `json:"nacosGroupName" gorm:"not null;default:'DEFAULT_GROUP'"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID               uint      `json:"id" gorm:"primaryKey"`
+	K8sNamespace     string    `json:"k8sNamespace" gorm:"not null;index"`
+	K8sDeployment    string    `json:"k8sDeployment" gorm:"not null;index"`
+	NacosNamespace   string    `json:"nacosNamespace" gorm:"not null"`
+	NacosServiceName string    `json:"nacosServiceName" gorm:"not null"`
+	NacosGroupName   string    `json:"nacosGroupName" gorm:"not null;default:'DEFAULT_GROUP'"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 // K8sNacosServiceMappingRequest 保存服务关联关系的请求参数
@@ -132,4 +132,22 @@ type K8sNacosServiceMappingRequest struct {
 	NacosNamespace   string `json:"nacosNamespace" binding:"required"`
 	NacosServiceName string `json:"nacosServiceName" binding:"required"`
 	NacosGroupName   string `json:"nacosGroupName"`
+}
+
+// IndustryMongoAuthConfig 存储行业调用mongo授权配置
+type IndustryMongoAuthConfig struct {
+	ID          uint      `json:"id" gorm:"primaryKey"`
+	CacheKey    string    `json:"cache_key" gorm:"not null;uniqueIndex;default:'industryAkAuthConfig'"`
+	CacheValue  string    `json:"cache_value" gorm:"not null"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// IndustryMongoAuthRequest 保存行业调用mongo授权配置的请求参数
+type IndustryMongoAuthRequest struct {
+	ID          *uint  `json:"id"`
+	CacheKey    string `json:"cache_key" binding:"required"`
+	CacheValue  string `json:"cache_value" binding:"required"`
+	Description string `json:"description"`
 }
