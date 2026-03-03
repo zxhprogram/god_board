@@ -59,6 +59,10 @@ func SetupRouter() *gin.Engine {
 	r.POST("/api/cache-metadata", handlers.HandleSaveCacheMetadataConfig)
 	r.DELETE("/api/cache-metadata/:id", handlers.HandleDeleteCacheMetadataConfig)
 
+	// Redis查询路由
+	r.POST("/api/redis/query", handlers.HandleRedisQuery)
+	r.POST("/api/redis/query/batch", handlers.HandleRedisQueryBatch)
+
 	return r
 }
 
