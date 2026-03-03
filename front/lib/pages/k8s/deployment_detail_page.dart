@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart'
+    show DataTable, DataColumn, DataRow, DataCell;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 import '../../services/api_service.dart';
@@ -949,82 +951,78 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
   Widget _buildServiceTable() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Table(
-        rows: [
-          TableHeader(
-            cells: [
-              TableCell(child: Text('名称')),
-              TableCell(child: Text('类型')),
-              TableCell(child: Text('Cluster IP')),
-              TableCell(child: Text('端口')),
-              TableCell(child: Text('Selector')),
-            ],
-          ),
-          ..._matchedServices.map((service) {
-            final ports = service['ports'] as List<dynamic>? ?? [];
-            final selector = service['selector'] as Map<String, dynamic>? ?? {};
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text('名称')),
+          DataColumn(label: Text('类型')),
+          DataColumn(label: Text('Cluster IP')),
+          DataColumn(label: Text('端口')),
+          DataColumn(label: Text('Selector')),
+        ],
+        rows: _matchedServices.map((service) {
+          final ports = service['ports'] as List<dynamic>? ?? [];
+          final selector = service['selector'] as Map<String, dynamic>? ?? {};
 
-            return TableRow(
-              cells: [
-                TableCell(child: Text(service['name'] ?? '-')),
-                TableCell(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getServiceTypeColor(service['type']),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      service['type'] ?? '-',
-                      style: const TextStyle(fontSize: 12, color: Colors.white),
-                    ),
+          return DataRow(
+            cells: [
+              DataCell(Text(service['name'] ?? '-')),
+              DataCell(
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getServiceTypeColor(service['type']),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    service['type'] ?? '-',
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
                   ),
                 ),
-                TableCell(child: Text(service['clusterIP'] ?? '-')),
-                TableCell(
-                  child: ports.isEmpty
-                      ? const Text('-')
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: ports.map((port) {
-                            return Text(
-                              '${port['port']}:${port['targetPort']}',
-                              style: const TextStyle(fontSize: 12),
-                            );
-                          }).toList(),
-                        ),
-                ),
-                TableCell(
-                  child: selector.isEmpty
-                      ? const Text('-')
-                      : Wrap(
-                          spacing: 4,
-                          children: selector.entries.map((e) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 1,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.gray.shade200,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '${e.key}=${e.value}',
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                ),
-              ],
-            );
-          }),
-        ],
+              ),
+              DataCell(Text(service['clusterIP'] ?? '-')),
+              DataCell(
+                ports.isEmpty
+                    ? const Text('-')
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: ports.map((port) {
+                          return Text(
+                            '${port['port']}:${port['targetPort']}',
+                            style: const TextStyle(fontSize: 12),
+                          );
+                        }).toList(),
+                      ),
+              ),
+              DataCell(
+                selector.isEmpty
+                    ? const Text('-')
+                    : Wrap(
+                        spacing: 4,
+                        children: selector.entries.map((e) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.gray.shade200,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${e.key}=${e.value}',
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
