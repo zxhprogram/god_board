@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' show ListTile;
+import 'package:front/pages/config_insight/industry_cache_config_check_page.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'config_insight/newland_gateway_check_page.dart';
 import 'config_insight/cache_config_check_page.dart';
@@ -18,6 +19,7 @@ class _ConfigInsightPageState extends State<ConfigInsightPage> {
   final List<Map<String, dynamic>> _navItems = [
     {'id': 'newland', 'label': '新大陆网关配置检查', 'icon': LucideIcons.settings},
     {'id': 'cache', 'label': '缓存配置检查', 'icon': LucideIcons.database},
+    {'id': 'industryCache', 'label': '行业缓存配置检查', 'icon': LucideIcons.activity},
   ];
 
   @override
@@ -115,6 +117,8 @@ class _ConfigInsightPageState extends State<ConfigInsightPage> {
         return const NewlandGatewayCheckPage();
       case 'cache':
         return const CacheConfigCheckPage();
+      case 'industryCache':
+        return const IndustryCacheConfigCheckPage();
       default:
         return const Center(child: Text('请选择检查项'));
     }

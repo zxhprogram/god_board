@@ -1,7 +1,7 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-class CacheConfigCheckPage extends StatelessWidget {
-  const CacheConfigCheckPage({super.key});
+class IndustryCacheConfigCheckPage extends StatelessWidget {
+  const IndustryCacheConfigCheckPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -10,12 +10,12 @@ class CacheConfigCheckPage extends StatelessWidget {
       children: [
         // 页面标题
         const Text(
-          '缓存配置检查',
+          '行业缓存配置检查',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         const Text(
-          '检查缓存配置的正确性和性能状态',
+          '检查行业缓存配置的正确性和性能状态',
           style: TextStyle(fontSize: 14, color: Colors.gray),
         ),
         const SizedBox(height: 32),
