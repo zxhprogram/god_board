@@ -611,6 +611,37 @@ class ApiService {
     }
   }
 
+  // Redis 查询
+  static Future<Map<String, dynamic>> queryRedis({
+    required String host,
+    required int port,
+    required bool isCluster,
+    required String password,
+    required String queryType,
+    required String key,
+    String? hkey,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/redis/query'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'host': host,
+          'port': port,
+          'isCluster': isCluster,
+          'password': password,
+          'queryType': queryType,
+          'key': key,
+          'hkey': hkey,
+        }),
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
   // 保存 K8s Deployment 与 Nacos 服务的关联关系
   static Future<Map<String, dynamic>> saveK8sNacosServiceMapping({
     required String k8sNamespace,
