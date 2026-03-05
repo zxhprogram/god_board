@@ -151,3 +151,23 @@ type IndustryMongoAuthRequest struct {
 	CacheValue  string `json:"cache_value" binding:"required"`
 	Description string `json:"description"`
 }
+
+// DeploymentLogPathConfig 存储 Deployment 日志路径配置
+type DeploymentLogPathConfig struct {
+	ID            uint      `json:"id" gorm:"primaryKey"`
+	K8sNamespace  string    `json:"k8s_namespace" gorm:"not null;index"`
+	K8sDeployment string    `json:"k8s_deployment" gorm:"not null;index"`
+	LogPath       string    `json:"log_path" gorm:"not null"`
+	Description   string    `json:"description"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+// DeploymentLogPathRequest 保存 Deployment 日志路径配置的请求参数
+type DeploymentLogPathRequest struct {
+	ID            *uint  `json:"id"`
+	K8sNamespace  string `json:"k8s_namespace" binding:"required"`
+	K8sDeployment string `json:"k8s_deployment" binding:"required"`
+	LogPath       string `json:"log_path" binding:"required"`
+	Description   string `json:"description"`
+}

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart'
-    show DataTable, DataColumn, DataRow, DataCell;
-import 'package:shadcn_flutter/shadcn_flutter.dart';
+    show AlertDialog, DataTable, DataColumn, DataRow, DataCell;
+import 'package:shadcn_flutter/shadcn_flutter.dart' hide AlertDialog;
 
 import '../../services/api_service.dart';
 
@@ -40,6 +40,12 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
   Map<String, dynamic>? _linkedNacosService; // 已关联的 Nacos 服务详情
   List<dynamic> _nacosServiceInstances = []; // 服务实例列表
   bool _isLoadingServiceMapping = true;
+
+  // 日志路径配置相关状态
+  Map<String, dynamic>? _logPathConfig;
+  bool _isLoadingLogPath = true;
+  final TextEditingController _logPathController = TextEditingController();
+  final TextEditingController _logPathDescController = TextEditingController();
 
   @override
   void initState() {
@@ -93,6 +99,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
       _isLoadingServices = true;
       _isLoadingMapping = true;
       _isLoadingServiceMapping = true;
+      _isLoadingLogPath = true;
       _matchedServices = [];
       _deploymentData = null;
       _existingMapping = null;
@@ -100,6 +107,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
       _existingServiceMapping = null;
       _linkedNacosService = null;
       _nacosServiceInstances = [];
+      _logPathConfig = null;
       // 重置 Nacos 相关状态
       _nacosNamespaces = [];
       _nacosConfigs.clear();
@@ -113,6 +121,104 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
       await _loadMatchedServices();
       await _loadExistingMapping();
       await _loadExistingServiceMapping();
+      await _loadLogPathConfig();
+    }
+  }
+
+  // 加载日志路径配置
+  Future<void> _loadLogPathConfig() async {
+    setState(() => _isLoadingLogPath = true);
+
+    try {
+      final response = await ApiService.getDeploymentLogPathConfig(
+        k8sNamespace: widget.namespace,
+        k8sDeployment: widget.deployment,
+      );
+
+      if (response['code'] == 200 && response['data'] != null) {
+        final data = response['data'] as Map<String, dynamic>;
+        setState(() {
+          _logPathConfig = data;
+          _logPathController.text = data['log_path'] ?? '';
+          _logPathDescController.text = data['description'] ?? '';
+        });
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      debugPrint('Error loading log path config: $e');
+    }
+
+    setState(() => _isLoadingLogPath = false);
+  }
+
+  // 保存日志路径配置
+  Future<void> _saveLogPathConfig() async {
+    if (_logPathController.text.isEmpty) {
+      _showToast('请输入日志路径', isError: true);
+      return;
+    }
+
+    try {
+      final response = await ApiService.saveDeploymentLogPathConfig(
+        id: _logPathConfig?['id'],
+        k8sNamespace: widget.namespace,
+        k8sDeployment: widget.deployment,
+        logPath: _logPathController.text,
+        description: _logPathDescController.text,
+      );
+
+      if (response['code'] == 200) {
+        _showToast('保存成功');
+        _loadLogPathConfig();
+      } else {
+        _showToast(response['message'] ?? '保存失败', isError: true);
+      }
+    } catch (e) {
+      _showToast('保存失败: $e', isError: true);
+    }
+  }
+
+  // 删除日志路径配置
+  Future<void> _deleteLogPathConfig() async {
+    if (_logPathConfig == null || _logPathConfig!['id'] == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认删除'),
+        content: const Text('确定要删除日志路径配置吗？'),
+        actions: [
+          SecondaryButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          PrimaryButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final response = await ApiService.deleteDeploymentLogPathConfig(
+        _logPathConfig!['id'],
+      );
+
+      if (response['code'] == 200) {
+        _showToast('删除成功');
+        setState(() {
+          _logPathConfig = null;
+          _logPathController.clear();
+          _logPathDescController.clear();
+        });
+      } else {
+        _showToast(response['message'] ?? '删除失败', isError: true);
+      }
+    } catch (e) {
+      _showToast('删除失败: $e', isError: true);
     }
   }
 
@@ -781,7 +887,155 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
               ),
             ),
           ),
+          const SizedBox(height: 24),
+          // 日志路径配置卡片
+          _buildLogPathConfigCard(),
         ],
+      ),
+    );
+  }
+
+  // 构建日志路径配置卡片
+  Widget _buildLogPathConfigCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '日志路径配置',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                if (_isLoadingLogPath)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else if (_logPathConfig != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          size: 14,
+                          color: Colors.green.shade700,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '已配置',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // 已配置的日志路径显示
+            if (_logPathConfig != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.folder,
+                          color: Colors.blue.shade700,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '当前日志路径',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SelectableText(
+                      _logPathConfig!['log_path'] ?? '',
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (_logPathConfig!['description'] != null &&
+                        _logPathConfig!['description']
+                            .toString()
+                            .isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '描述: ${_logPathConfig!['description']}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.gray.shade600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            // 日志路径输入框
+            TextField(
+              controller: _logPathController,
+              placeholder: const Text('日志路径'),
+              hintText: '请输入日志文件路径，例如: /var/log/app/app.log',
+            ),
+            const SizedBox(height: 12),
+            // 描述输入框
+            TextField(
+              controller: _logPathDescController,
+              placeholder: const Text('描述（可选）'),
+              hintText: '请输入日志路径的描述信息',
+              maxLines: 2,
+            ),
+            const SizedBox(height: 16),
+            // 操作按钮
+            Row(
+              children: [
+                PrimaryButton(
+                  onPressed: _saveLogPathConfig,
+                  child: Text(_logPathConfig != null ? '更新配置' : '保存配置'),
+                ),
+                const SizedBox(width: 12),
+                if (_logPathConfig != null)
+                  SecondaryButton(
+                    onPressed: _deleteLogPathConfig,
+                    child: const Text('删除配置'),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

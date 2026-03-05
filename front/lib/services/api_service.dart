@@ -756,4 +756,66 @@ class ApiService {
       return {'code': 500, 'message': '请求失败: $e', 'data': null};
     }
   }
+
+  // 获取 Deployment 日志路径配置
+  static Future<Map<String, dynamic>> getDeploymentLogPathConfig({
+    required String k8sNamespace,
+    required String k8sDeployment,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '$baseUrl/api/deployment-log-path?k8s_namespace=$k8sNamespace&k8s_deployment=$k8sDeployment',
+        ),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 保存 Deployment 日志路径配置
+  static Future<Map<String, dynamic>> saveDeploymentLogPathConfig({
+    int? id,
+    required String k8sNamespace,
+    required String k8sDeployment,
+    required String logPath,
+    String? description,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/deployment-log-path'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id': id,
+          'k8s_namespace': k8sNamespace,
+          'k8s_deployment': k8sDeployment,
+          'log_path': logPath,
+          'description': description ?? '',
+        }),
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
+
+  // 删除 Deployment 日志路径配置
+  static Future<Map<String, dynamic>> deleteDeploymentLogPathConfig(
+    int id,
+  ) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/deployment-log-path/$id'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'code': 500, 'message': '请求失败: $e', 'data': null};
+    }
+  }
 }

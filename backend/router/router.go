@@ -78,6 +78,20 @@ func SetupRouter() *gin.Engine {
 		handlers.DeleteIndustryMongoAuthConfig(c, db.DB)
 	})
 
+	// Deployment 日志路径配置路由
+	r.GET("/api/deployment-log-path", func(c *gin.Context) {
+		handlers.GetDeploymentLogPathConfig(c, db.DB)
+	})
+	r.GET("/api/deployment-log-path/list", func(c *gin.Context) {
+		handlers.GetDeploymentLogPathConfigs(c, db.DB)
+	})
+	r.POST("/api/deployment-log-path", func(c *gin.Context) {
+		handlers.SaveDeploymentLogPathConfig(c, db.DB)
+	})
+	r.DELETE("/api/deployment-log-path/:id", func(c *gin.Context) {
+		handlers.DeleteDeploymentLogPathConfig(c, db.DB)
+	})
+
 	return r
 }
 
