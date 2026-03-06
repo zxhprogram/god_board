@@ -120,6 +120,68 @@ class NacosConfigCard extends StatelessWidget {
             _buildInfoRow('Data ID', config['dataId'] ?? '-'),
             _buildInfoRow('Group', config['group'] ?? '-'),
             _buildInfoRow('Namespace', namespaceName),
+            // 显示配置内容
+            if (state.isLoadingConfigContent)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '加载配置内容...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.gray.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (state.linkedNacosConfigContent != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.gray.shade100,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.gray.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.code, size: 14, color: Colors.gray.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          '配置内容',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.gray.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SelectableText(
+                      state.linkedNacosConfigContent!,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: Colors.gray.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

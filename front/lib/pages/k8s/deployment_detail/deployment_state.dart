@@ -20,7 +20,9 @@ class DeploymentState extends ChangeNotifier {
   String? selectedNacosConfigId;
   Map<String, dynamic>? existingMapping;
   Map<String, dynamic>? linkedNacosConfig;
+  String? linkedNacosConfigContent; // 配置内容
   bool isLoadingMapping = true;
+  bool isLoadingConfigContent = false; // 加载配置内容的状态
 
   // Nacos 服务关联相关
   Map<String, dynamic>? existingServiceMapping;
@@ -57,10 +59,12 @@ class DeploymentState extends ChangeNotifier {
     isLoadingMapping = true;
     isLoadingServiceMapping = true;
     isLoadingLogPath = true;
+    isLoadingConfigContent = false;
     matchedServices = [];
     deploymentData = null;
     existingMapping = null;
     linkedNacosConfig = null;
+    linkedNacosConfigContent = null;
     existingServiceMapping = null;
     linkedNacosService = null;
     nacosServiceInstances = [];
@@ -198,10 +202,46 @@ class DeploymentState extends ChangeNotifier {
       if (response['code'] == 200 && response['data'] != null) {
         linkedNacosConfig = response['data'] as Map<String, dynamic>;
         notifyListeners();
+
+        // 加载配置内容
+        await loadNacosConfigContent(namespaceId, linkedNacosConfig!);
       }
     } catch (e) {
       debugPrint('Error loading linked config: $e');
     }
+  }
+
+  /// 加载 Nacos 配置内容
+  Future<void> loadNacosConfigContent(
+    String namespaceId,
+    Map<String, dynamic> config,
+  ) async {
+    isLoadingConfigContent = true;
+    notifyListeners();
+
+    try {
+      final dataId = config['dataId'] as String?;
+      final group = config['group'] as String? ?? 'DEFAULT_GROUP';
+
+      if (dataId != null) {
+        final response = await ApiService.getNacosConfigDetail(
+          namespaceId: namespaceId,
+          dataId: dataId,
+          group: group,
+        );
+
+        if (response['code'] == 200 && response['data'] != null) {
+          final data = response['data'] as Map<String, dynamic>;
+          linkedNacosConfigContent = data['content'] as String?;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading config content: $e');
+    }
+
+    isLoadingConfigContent = false;
+    notifyListeners();
   }
 
   /// 加载已存在的服务关联关系
