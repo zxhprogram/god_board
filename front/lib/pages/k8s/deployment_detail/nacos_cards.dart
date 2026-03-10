@@ -16,7 +16,7 @@ class NacosConfigCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -30,7 +30,7 @@ class NacosConfigCard extends StatelessWidget {
                 if (state.isLoadingMapping)
                   const SizedBox(
                     width: 16,
-                    height: 16,
+                    height: 4,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 else if (state.existingMapping != null)
@@ -64,10 +64,10 @@ class NacosConfigCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             if (state.linkedNacosConfig != null) ...[
               _buildLinkedConfigSummary(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
             ],
             PrimaryButton(
               onPressed: onAssociate,
@@ -228,7 +228,7 @@ class NacosServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -276,10 +276,10 @@ class NacosServiceCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             if (state.linkedNacosService != null) ...[
               _buildLinkedServiceSummary(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
             ],
             PrimaryButton(
               onPressed: onAssociate,
@@ -312,7 +312,7 @@ class NacosServiceCard extends StatelessWidget {
         border: Border.all(color: Colors.blue.shade200),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -330,11 +330,11 @@ class NacosServiceCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
             _buildInfoRow('服务名', serviceName),
             _buildInfoRow('分组', groupName),
             _buildInfoRow('Namespace', namespaceName),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
             Text(
               '服务实例 (${state.nacosServiceInstances.length}个)',
               style: TextStyle(
@@ -343,7 +343,7 @@ class NacosServiceCard extends StatelessWidget {
                 color: Colors.blue.shade700,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             if (state.nacosServiceInstances.isEmpty)
               const Text(
                 '暂无实例',
@@ -364,7 +364,7 @@ class NacosServiceCard extends StatelessWidget {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(6),
@@ -383,7 +383,7 @@ class NacosServiceCard extends StatelessWidget {
                                     ? Colors.green.shade600
                                     : Colors.red.shade600,
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 4),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

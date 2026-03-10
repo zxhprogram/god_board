@@ -225,7 +225,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
           Row(
             children: [
               const Icon(Icons.apps, size: 32, color: Colors.blue),
-              const SizedBox(width: 12),
+              const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   widget.deployment,
@@ -238,7 +238,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 2),
           // 状态标签
           Row(
             children: [
@@ -260,21 +260,21 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 4),
           // 基本信息卡片
           BasicInfoCard(state: _state),
-          const SizedBox(height: 24),
+          const SizedBox(height: 4),
           // Labels 卡片
           LabelsCard(labels: labels),
-          if (labels.isNotEmpty) const SizedBox(height: 24),
+          if (labels.isNotEmpty) const SizedBox(height: 4),
           // Annotations 卡片
           AnnotationsCard(annotations: annotations),
-          if (annotations.isNotEmpty) const SizedBox(height: 24),
+          if (annotations.isNotEmpty) const SizedBox(height: 4),
           // Containers 卡片
           if (containers.isNotEmpty)
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -285,7 +285,7 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 4),
                     ...containers.asMap().entries.map((entry) {
                       final index = entry.key;
                       final container = entry.value as Map<String, dynamic>;
@@ -295,19 +295,19 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
                 ),
               ),
             ),
-          if (containers.isNotEmpty) const SizedBox(height: 24),
+          if (containers.isNotEmpty) const SizedBox(height: 4),
           // Services 卡片
           ServicesCard(state: _state),
-          const SizedBox(height: 24),
+          const SizedBox(height: 4),
           // Nacos 配置关联卡片
           NacosConfigCard(state: _state, onAssociate: _showNacosMappingDrawer),
-          const SizedBox(height: 24),
+          const SizedBox(height: 4),
           // Nacos 服务关联卡片
           NacosServiceCard(
             state: _state,
             onAssociate: _showNacosServiceMappingDrawer,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 4),
           // 日志路径配置卡片
           LogPathConfigCard(
             state: _state,

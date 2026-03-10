@@ -13,7 +13,7 @@ class BasicInfoCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -21,7 +21,7 @@ class BasicInfoCard extends StatelessWidget {
               '基本信息',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             _buildInfoRow('名称', data['name'] ?? '-'),
             _buildInfoRow('Namespace', state.namespace),
             _buildInfoRow('Replicas', '${data['replicas'] ?? 0}'),
@@ -35,7 +35,7 @@ class BasicInfoCard extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -68,7 +68,7 @@ class LabelsCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -78,13 +78,13 @@ class LabelsCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 4,
+              runSpacing: 2,
               children: labels.entries.map((entry) {
                 return Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 4,
+                    vertical: 2,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.gray.shade200,
@@ -113,7 +113,7 @@ class AnnotationsCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -121,10 +121,10 @@ class AnnotationsCard extends StatelessWidget {
               'Annotations',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             ...annotations.entries.map((entry) {
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 4),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -159,7 +159,7 @@ class ServicesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -169,7 +169,7 @@ class ServicesCard extends StatelessWidget {
                   '关联的 Services',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 if (state.isLoadingServices)
                   const SizedBox(
                     width: 16,
@@ -196,7 +196,7 @@ class ServicesCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             if (state.isLoadingServices)
               const Center(child: Text('加载中...'))
             else if (state.matchedServices.isEmpty)
@@ -220,7 +220,7 @@ class ServicesCard extends StatelessWidget {
       children: [
         // 表头
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           decoration: BoxDecoration(
             color: Colors.gray.shade100,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
@@ -275,7 +275,7 @@ class ServicesCard extends StatelessWidget {
               .join(', ');
 
           return Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: Colors.gray.shade200)),
             ),
@@ -314,7 +314,7 @@ class ContainerCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -338,7 +338,7 @@ class ContainerCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 4),
                 Text(
                   container['name'] ?? 'Unknown',
                   style: const TextStyle(
@@ -357,7 +357,7 @@ class ContainerCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
             if (ports.isNotEmpty) ...[
               const Text(
                 'Ports',
@@ -386,7 +386,7 @@ class ContainerCard extends StatelessWidget {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
             ],
             if (env.isNotEmpty) ...[
               const Text(
@@ -411,7 +411,7 @@ class ContainerCard extends StatelessWidget {
                   '... 还有 ${env.length - 5} 个',
                   style: TextStyle(fontSize: 12, color: Colors.gray.shade500),
                 ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
             ],
             if (volumeMounts.isNotEmpty) ...[
               const Text(
