@@ -299,7 +299,8 @@ class DeploymentState extends ChangeNotifier {
           'groupName': groupName ?? 'DEFAULT_GROUP',
           'namespace': ns,
         };
-        nacosServiceInstances = response['data'] as List<dynamic>? ?? [];
+       var x = response['data'] as Map<String,dynamic>;
+       nacosServiceInstances =   x['list'] as List<dynamic>??[];
         notifyListeners();
       }
     } catch (e) {
