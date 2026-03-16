@@ -236,6 +236,11 @@ class K8sEnv {
   factory K8sEnv.fromJson(Map<String, dynamic> json) {
     return .new(name: json['name'], value: json['value']);
   }
+
+  @override
+  String toString() {
+    return '{name:$name,value:$value}';
+  }
 }
 
 class K8sResource {
@@ -250,6 +255,11 @@ class K8sResource {
       requests: R.fromJson(json['requests']),
     );
   }
+
+  @override
+  String toString() {
+    return '{limits:$limits,request:$requests}';
+  }
 }
 
 class R {
@@ -260,6 +270,11 @@ class R {
 
   factory R.fromJson(Map<String, dynamic> json) {
     return .new(cpu: json['cpu'], memory: json['memory']);
+  }
+
+  @override
+  String toString() {
+    return '{cpu:$cpu,memory:$memory}';
   }
 }
 
@@ -280,6 +295,11 @@ class K8sPort {
       containerPort: json['containerPort'],
       protocol: json['protocol'],
     );
+  }
+
+  @override
+  String toString() {
+    return '{name:$name,containerPort:$containerPort,protocol:$protocol}';
   }
 }
 

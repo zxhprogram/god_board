@@ -19,7 +19,7 @@ class _K8sNamespaceDetailPageState extends State<K8sNamespaceDetailPage> {
   final _deploymentsState = signal<K8sDeploymentsResponse?>(null);
   final _isLoadingStatus = Signal(true);
   final _selectedIndex = Signal(-1);
-  final _selectedDeployment = Signal<String?>(null);
+  final _selectedDeployment = Signal<K8sDeploymentsDataItem?>(null);
 
   @override
   void initState() {
@@ -72,7 +72,7 @@ class _K8sNamespaceDetailPageState extends State<K8sNamespaceDetailPage> {
                 visualDensity: .compact,
                 onTap: () {
                   _selectedIndex.value = index;
-                  _selectedDeployment.value = r.data!.items[index].name;
+                  _selectedDeployment.value = r.data!.items[index];
                 },
                 leading: SizedBox(
                   width: 100,
@@ -94,7 +94,7 @@ class _K8sNamespaceDetailPageState extends State<K8sNamespaceDetailPage> {
           child: K8sDeploymentDetailPage(
             namespace: widget.namespace,
             deployment: deployment,
-            key: ValueKey('${widget.namespace}-$deployment'),
+            key: ValueKey('${widget.namespace}-${deployment?.name}'),
           ),
         ),
       ],
