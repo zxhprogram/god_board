@@ -3,6 +3,7 @@ import 'package:signals/signals.dart';
 import 'package:signals/signals_flutter.dart';
 
 import '../../service/k8s_service_api.dart';
+import '../../service/log_service_api.dart';
 
 class K8sDeploymentDetailPage extends StatefulWidget {
   final K8sDeploymentsDataItem? deployment;
@@ -16,6 +17,7 @@ class K8sDeploymentDetailPage extends StatefulWidget {
 
 class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
   var podsState = Signal<K8sPodsResponse?>(null);
+  var logPathInfoState = Signal<DeploymentLogPathResponse?>(null);
   final _isLoadingStatus = Signal(true);
   final _fullLogState = Signal<CheckboxState>(.unchecked);
 
@@ -35,12 +37,18 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
     );
     podsState.value = r;
     _isLoadingStatus.value = false;
+    var nr = await getDeploymentLogPathConfig(
+      k8sNamespace: widget.namespace!,
+      k8sDeployment: widget.deployment!.name,
+    );
+    logPathInfoState.value = nr;
   }
 
   @override
   Widget build(BuildContext context) {
     var isLoading = _isLoadingStatus.watch(context);
     var r = podsState.watch(context);
+    var logPathInfo = logPathInfoState.watch(context);
     if (isLoading) {
       return const Center(
         child: Column(
@@ -62,79 +70,155 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
       );
     }
     var state = _fullLogState.watch(context);
-    return Column(
-      crossAxisAlignment: .stretch,
-      spacing: 4,
-      children: [
-        Checkbox(
-          state: state,
-          onChanged: (value) {
-            _fullLogState.value = value;
-          },
-          trailing: const Text('拉取全量日志'),
-        ),
-        SizedBox(
-          height: 200,
-          child: SingleChildScrollView(
-            child: Card(
-              child: Column(
-                crossAxisAlignment: .start,
-                children: [
-                  Text('Deployment information').h4,
-                  Text('name: ${widget.deployment!.name}'),
-                  Text('namespace : ${widget.deployment!.namespace}'),
-                  Text('replicas : ${widget.deployment!.replicas}'),
-                  Text(
-                    'availableReplicas : ${widget.deployment!.availableReplicas}',
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: .stretch,
+        spacing: 4,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: Row(
+              spacing: 20,
+              children: [
+                Expanded(
+                  child: TextField(
+                    placeholder: Text(
+                      logPathInfo == null
+                          ? '/app/logs/'
+                          : logPathInfo.data!.logPath,
+                    ),
                   ),
-                  Text('status : ${widget.deployment!.status}'),
-                  Text(
-                    'creationTimestamp : ${widget.deployment!.creationTimestamp}',
-                  ),
-                  Text('image : ${widget.deployment!.containers[0].image}'),
-                  Text('name : ${widget.deployment!.containers[0].name}'),
-                  Text(
-                    'imagePullPolicy : ${widget.deployment!.containers[0].imagePullPolicy}',
-                  ),
-                  Text('command : ${widget.deployment!.containers[0].command}'),
-                  Text('args : ${widget.deployment!.containers[0].args}'),
-                  Text('ports : ${widget.deployment!.containers[0].ports}'),
-                  Text('env : ${widget.deployment!.containers[0].env}'),
-                  Text(
-                    'resource : ${widget.deployment!.containers[0].resources}',
-                  ),
-                ],
-              ),
+                ),
+                Checkbox(
+                  state: state,
+                  onChanged: (value) {
+                    _fullLogState.value = value;
+                  },
+                  trailing: const Text('拉取全量日志'),
+                ),
+              ],
             ),
           ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemBuilder: (context, index) {
-              return Card(
-                borderColor: Colors.blue,
-                child: Column(
-                  crossAxisAlignment: .start,
-                  children: [
-                    Text('name: ${r.data!.items[index].name}'),
-                    Text('namespace: ${r.data!.items[index].namespace}'),
-                    Text('status: ${r.data!.items[index].status}'),
-                    Text('ip: ${r.data!.items[index].podIP}'),
-                    Text('node: ${r.data!.items[index].nodeName}'),
-                    Text('restartCount: ${r.data!.items[index].restartCount}'),
-                    Text(
-                      'creationTimestamp: ${r.data!.items[index].creationTimestamp}',
-                    ),
-                  ],
+          Card(
+            child: Column(
+              crossAxisAlignment: .start,
+              children: [
+                Text('Deployment information').h4,
+                Text('name: ${widget.deployment!.name}'),
+                Text('namespace : ${widget.deployment!.namespace}'),
+                Text('replicas : ${widget.deployment!.replicas}'),
+                Text(
+                  'availableReplicas : ${widget.deployment!.availableReplicas}',
                 ),
-              );
-            },
-            itemCount: r.data!.items.length,
+                Text('status : ${widget.deployment!.status}'),
+                Text(
+                  'creationTimestamp : ${widget.deployment!.creationTimestamp}',
+                ),
+                Text('image : ${widget.deployment!.containers[0].image}'),
+                Text('name : ${widget.deployment!.containers[0].name}'),
+                Text(
+                  'imagePullPolicy : ${widget.deployment!.containers[0].imagePullPolicy}',
+                ),
+                Text('command : ${widget.deployment!.containers[0].command}'),
+                Text('args : ${widget.deployment!.containers[0].args}'),
+                Text('ports : ${widget.deployment!.containers[0].ports}'),
+                Text('env : ${widget.deployment!.containers[0].env}'),
+                Text(
+                  'resource : ${widget.deployment!.containers[0].resources}',
+                ),
+              ],
+            ),
           ),
-        ),
-        Button.primary(child: Text('配置nacos关联关系'), onPressed: () {}),
-        Button.primary(child: Text('配置默认日志路径'), onPressed: () {}),
-      ],
+          Column(
+            children: [
+              Text('Pod 列表:').h4,
+              ...r.data!.items.map((e) {
+                return Card(
+                  child: Column(
+                    crossAxisAlignment: .stretch,
+                    children: [
+                      Text('name: ${e.name}'),
+                      Text('namespace: ${e.namespace}'),
+                      Text('status: ${e.status}'),
+                      Text('ip: ${e.podIP}'),
+                      Text('node: ${e.nodeName}'),
+                      Text('restartCount: ${e.restartCount}'),
+                      Text('creationTimestamp: ${e.creationTimestamp}'),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: .center,
+            children: [
+              Button.primary(child: Text('配置nacos关联关系'), onPressed: () {}),
+              Button.primary(
+                child: Text('配置默认日志路径'),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      final FormController controller = FormController();
+                      return AlertDialog(
+                        title: Text('配置${widget.deployment!.name}默认日志路径'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('配置的日志路径需要确保正确，日志路径应该是绝对路径'),
+                            const Gap(16),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 400),
+                              child: Form(
+                                controller: controller,
+                                child: FormTableLayout(
+                                  rows: [
+                                    FormField<String>(
+                                      key: FormKey(#name),
+                                      label: Text('Name'),
+                                      child: TextField(
+                                        initialValue:
+                                            logPathInfo?.data!.logPath,
+                                        autofocus: true,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ).withPadding(vertical: 16),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          PrimaryButton(
+                            child: const Text('保存'),
+                            onPressed: () async {
+                              print(controller.values[FormKey(#name)]);
+                              var logPath =
+                                  controller.values[FormKey(#name)] as String?;
+                              if (logPath == null) {
+                                return;
+                              }
+                              await saveLogPathConfig(
+                                id: logPathInfo?.data!.id,
+                                k8sNamespace: widget.namespace!,
+                                k8sDeployment: widget.deployment!.name,
+                                logPath: logPath,
+                              );
+                              Navigator.of(context).pop(controller.values);
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
