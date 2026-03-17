@@ -71,6 +71,59 @@ Future<void> saveK8sNacosMapping({
   logger.i(response.data);
 }
 
+Future<K8sNacosMappingResponse> getK8sNacosMapping({
+  required String namespace,
+  required String deployment,
+}) async {
+  var response = await dio.get(
+    '/api/mappings/k8s-nacos?k8sNamespace=$namespace&k8sDeployment=$deployment',
+  );
+  logger.i(response.data);
+  return .fromJson(response.data);
+}
+
+class K8sNacosMappingResponse extends Response {
+  K8sNacosMappingData? data;
+
+  K8sNacosMappingResponse({required super.code, super.message, this.data});
+
+  factory K8sNacosMappingResponse.fromJson(Map<String, dynamic> json) {
+    return .new(
+      code: json['code'],
+      message: json['message'],
+      data: json['data'] == null
+          ? null
+          : K8sNacosMappingData.fromJson(json['data']),
+    );
+  }
+}
+
+class K8sNacosMappingData {
+  int id;
+  String k8sNamespace;
+  String k8sDeployment;
+  String nacosNamespace;
+  String nacosConfigId;
+
+  K8sNacosMappingData({
+    required this.id,
+    required this.k8sNamespace,
+    required this.k8sDeployment,
+    required this.nacosConfigId,
+    required this.nacosNamespace,
+  });
+
+  factory K8sNacosMappingData.fromJson(Map<String, dynamic> json) {
+    return .new(
+      id: json['id'],
+      k8sNamespace: json['k8sNamespace'],
+      k8sDeployment: json['k8sDeployment'],
+      nacosConfigId: json['nacosConfigId'],
+      nacosNamespace: json['nacosNamespace'],
+    );
+  }
+}
+
 class K8sPodsData {
   List<K8sPodsDataItem> items;
   int total;

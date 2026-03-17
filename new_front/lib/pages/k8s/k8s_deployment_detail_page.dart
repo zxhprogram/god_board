@@ -121,7 +121,8 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                 Text('image : ${widget.deployment!.containers[0].image}'),
                 Text('name : ${widget.deployment!.containers[0].name}'),
                 Text(
-                  'imagePullPolicy : ${widget.deployment!.containers[0].imagePullPolicy}',
+                  'imagePullPolicy : ${widget.deployment!.containers[0]
+                      .imagePullPolicy}',
                 ),
                 Text('command : ${widget.deployment!.containers[0].command}'),
                 Text('args : ${widget.deployment!.containers[0].args}'),
@@ -177,6 +178,17 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
   }
 
   void _configK8sMappingNacos() async {
+    var mappingConfig = await getK8sNacosMapping(
+      namespace: widget.namespace!,
+      deployment: widget.deployment!.name,
+    );
+    if (mappingConfig.data != null) {
+      _selectedNacosNamespace.value = mappingConfig.data!.nacosNamespace;
+      _selectedNacosNamespaceDataId.value = mappingConfig.data!.nacosConfigId;
+      var r = await getNacosConfigs(mappingConfig.data!.nacosNamespace);
+      _configsOfNacosNamespace.value = r;
+    }
+
     await nacosLogin();
     var r = await getNacosNamespaces();
     if (r.data == null || r.data!.isEmpty) {
@@ -199,11 +211,11 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
         var nacosDataIdList = configsOfNacosNamespace == null
             ? <SelectItemButton<String>>[]
             : configsOfNacosNamespace.pageItems!.map((e) {
-                return SelectItemButton<String>(
-                  value: e.dataId,
-                  child: Text(e.dataId),
-                );
-              }).toList();
+          return SelectItemButton<String>(
+            value: e.dataId,
+            child: Text(e.dataId),
+          );
+        }).toList();
         final FormController controller = FormController();
         return AlertDialog(
           title: Text('配置${widget.deployment!.name}关联的nacos托管配置文件'),
@@ -241,25 +253,25 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child:
-                    (configsOfNacosNamespace != null &&
-                        configsOfNacosNamespace.totalCount > 0)
+                (configsOfNacosNamespace != null &&
+                    configsOfNacosNamespace.totalCount > 0)
                     ? Select<String>(
-                        itemBuilder: (context, item) {
-                          return Text(item);
-                        },
-                        popupConstraints: const BoxConstraints(
-                          maxHeight: 300,
-                          maxWidth: 200,
-                        ),
-                        onChanged: (value) {
-                          _selectedNacosNamespaceDataId.value = value;
-                        },
-                        value: selectedNacosNamespaceDataId,
-                        placeholder: const Text('选择nacos的dataId'),
-                        popup: SelectPopup(
-                          items: SelectItemList(children: nacosDataIdList),
-                        ).call,
-                      )
+                  itemBuilder: (context, item) {
+                    return Text(item);
+                  },
+                  popupConstraints: const BoxConstraints(
+                    maxHeight: 300,
+                    maxWidth: 200,
+                  ),
+                  onChanged: (value) {
+                    _selectedNacosNamespaceDataId.value = value;
+                  },
+                  value: selectedNacosNamespaceDataId,
+                  placeholder: const Text('选择nacos的dataId'),
+                  popup: SelectPopup(
+                    items: SelectItemList(children: nacosDataIdList),
+                  ).call,
+                )
                     : Container(),
               ),
             ],
