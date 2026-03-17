@@ -1,5 +1,6 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
+import 'package:simple_icons/simple_icons.dart';
 
 import '../../service/k8s_service_api.dart';
 import '../../service/log_service_api.dart';
@@ -107,28 +108,199 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
             child: Column(
               crossAxisAlignment: .start,
               children: [
-                Text('Deployment information').h4,
-                Text('name: ${widget.deployment!.name}'),
-                Text('namespace : ${widget.deployment!.namespace}'),
-                Text('replicas : ${widget.deployment!.replicas}'),
-                Text(
-                  'availableReplicas : ${widget.deployment!.availableReplicas}',
-                ),
-                Text('status : ${widget.deployment!.status}'),
-                Text(
-                  'creationTimestamp : ${widget.deployment!.creationTimestamp}',
-                ),
-                Text('image : ${widget.deployment!.containers[0].image}'),
-                Text('name : ${widget.deployment!.containers[0].name}'),
-                Text(
-                  'imagePullPolicy : ${widget.deployment!.containers[0].imagePullPolicy}',
-                ),
-                Text('command : ${widget.deployment!.containers[0].command}'),
-                Text('args : ${widget.deployment!.containers[0].args}'),
-                Text('ports : ${widget.deployment!.containers[0].ports}'),
-                Text('env : ${widget.deployment!.containers[0].env}'),
-                Text(
-                  'resource : ${widget.deployment!.containers[0].resources}',
+                Column(
+                  spacing: 1,
+                  children: [
+                    Card(
+                      child: Row(
+                        mainAxisAlignment: .spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: .start,
+                            children: [
+                              Text(widget.deployment!.name).h3,
+                              Text('ns: ${widget.deployment!.namespace}'),
+                            ],
+                          ),
+                          Container(
+                            padding: .all(10),
+                            decoration: BoxDecoration(
+                              borderRadius: .all(.circular(20)),
+                              border: .all(width: 1, color: Colors.green),
+                            ),
+                            child: Text(
+                              widget.deployment!.status,
+                              style: TextStyle(
+                                foreground: Paint()..color = Colors.green,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: .center,
+                      children: [
+                        Card(
+                          filled: true,
+                          fillColor: Colors.blue,
+                          child: Column(
+                            children: [
+                              Text(
+                                'REPLICAS',
+                                style: TextStyle(
+                                  foreground: Paint()..color = Colors.white,
+                                ),
+                              ).bold.withOpacity(0.5),
+                              Text(
+                                '${widget.deployment!.replicas}/${widget.deployment!.availableReplicas} Ready',
+                                style: TextStyle(
+                                  foreground: Paint()..color = Colors.white,
+                                ),
+                              ).bold,
+                            ],
+                          ),
+                        ),
+                        Card(
+                          filled: true,
+                          fillColor: Colors.blue,
+                          child: Column(
+                            children: [
+                              Text(
+                                'CREATED',
+                                style: TextStyle(
+                                  foreground: Paint()..color = Colors.white,
+                                ),
+                              ).bold.withOpacity(0.5),
+                              Text(
+                                widget.deployment!.creationTimestamp,
+                                style: TextStyle(
+                                  foreground: Paint()..color = Colors.white,
+                                ),
+                              ).bold,
+                            ],
+                          ),
+                        ),
+                        Card(
+                          filled: true,
+                          fillColor: Colors.blue,
+                          child: Column(
+                            children: [
+                              Text(
+                                'CPU',
+                                style: TextStyle(
+                                  foreground: Paint()..color = Colors.white,
+                                ),
+                              ).bold.withOpacity(0.5),
+                              Text(
+                                '${widget.deployment!.containers[0].resources.requests.cpu}/${widget.deployment!.containers[0].resources.limits.cpu}',
+                                style: TextStyle(
+                                  foreground: Paint()..color = Colors.white,
+                                ),
+                              ).bold,
+                            ],
+                          ),
+                        ),
+                        Card(
+                          filled: true,
+                          fillColor: Colors.blue,
+                          child: Column(
+                            children: [
+                              Text(
+                                'MEMORY',
+                                style: TextStyle(
+                                  foreground: Paint()..color = Colors.white,
+                                ),
+                              ).bold.withOpacity(0.5),
+                              Text(
+                                '${widget.deployment!.containers[0].resources.requests.memory}/${widget.deployment!.containers[0].resources.limits.memory}',
+                                style: TextStyle(
+                                  foreground: Paint()..color = Colors.white,
+                                ),
+                              ).bold,
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    Card(
+                      borderColor: Colors.black,
+                      child: Column(
+                        crossAxisAlignment: .start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(SimpleIcons.codepen),
+                              Text('IMAGE'),
+                            ],
+                          ),
+                          Text('${widget.deployment!.containers[0].image}'),
+                          Text(
+                            'Pull Policy: ${widget.deployment!.containers[0].imagePullPolicy}',
+                          ),
+                        ],
+                      ),
+                    ),
+                    Card(
+                      borderColor: Colors.black,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(SimpleIcons.chainlink),
+                              Text('NETWORK & PORTS'),
+                            ],
+                          ),
+                          Text(
+                            'ports : ${widget.deployment!.containers[0].ports}',
+                          ),
+                        ],
+                      ),
+                    ),
+                    Card(
+                      borderColor: Colors.black,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(SimpleIcons.termius),
+                              Text('COMMAND'),
+                            ],
+                          ),
+                          Text(
+                            'command : ${widget.deployment!.containers[0].command}',
+                          ),
+                        ],
+                      ),
+                    ),
+                    Card(
+                      borderColor: Colors.black,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(SimpleIcons.paramountplus),
+                              Text('ARGS'),
+                            ],
+                          ),
+                          Text(
+                            'args : ${widget.deployment!.containers[0].args}',
+                          ),
+                        ],
+                      ),
+                    ),
+                    Card(
+                      borderColor: Colors.black,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [Icon(SimpleIcons.dotenv), Text('ENV')],
+                          ),
+                          Text('env : ${widget.deployment!.containers[0].env}'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
