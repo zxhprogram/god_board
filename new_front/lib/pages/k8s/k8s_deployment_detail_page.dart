@@ -22,6 +22,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
   final _isLoadingStatus = Signal(true);
   final _fullLogState = Signal<CheckboxState>(.unchecked);
   final _selectedNacosNamespace = Signal<String?>(null);
+  final _selectedNacosNamespaceDataId = Signal<String?>(null);
   final _configsOfNacosNamespace = Signal<NacosConfigResponse?>(null);
 
   @override
@@ -74,8 +75,6 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
       );
     }
     var state = _fullLogState.watch(context);
-    var selectedNacosNamespace = _selectedNacosNamespace.watch(context);
-    var configsOfNacosNamespace = _configsOfNacosNamespace.watch(context);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: .stretch,
@@ -168,7 +167,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                     return;
                   }
                   var _list = r.data!.map((e) {
-                    return SelectItemButton(
+                    return SelectItemButton<String>(
                       value: e.namespace,
                       child: Text(e.namespaceShowName),
                     );
@@ -176,6 +175,20 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                   showDialog(
                     context: context,
                     builder: (context) {
+                      var selectedNacosNamespace = _selectedNacosNamespace
+                          .watch(context);
+                      var configsOfNacosNamespace = _configsOfNacosNamespace
+                          .watch(context);
+                      var selectedNacosNamespaceDataId =
+                          _selectedNacosNamespaceDataId.watch(context);
+                      var nacosDataIdList = configsOfNacosNamespace == null
+                          ? <SelectItemButton<String>>[]
+                          : configsOfNacosNamespace.pageItems!.map((e) {
+                              return SelectItemButton<String>(
+                                value: e.dataId,
+                                child: Text(e.dataId),
+                              );
+                            }).toList();
                       final FormController controller = FormController();
                       return AlertDialog(
                         title: Text(
@@ -212,13 +225,12 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                                 ).call,
                               ),
                             ),
-                            (configsOfNacosNamespace != null &&
-                                    configsOfNacosNamespace!.totalCount > 0)
-                                ? ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      maxWidth: 400,
-                                    ),
-                                    child: Select<String>(
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 400),
+                              child:
+                                  (configsOfNacosNamespace != null &&
+                                      configsOfNacosNamespace.totalCount > 0)
+                                  ? Select<String>(
                                       itemBuilder: (context, item) {
                                         return Text(item);
                                       },
@@ -227,18 +239,20 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                                         maxWidth: 200,
                                       ),
                                       onChanged: (value) {
-                                        _selectedNacosNamespace.value = value;
+                                        print(value);
+                                        _selectedNacosNamespaceDataId.value =
+                                            value;
                                       },
-                                      value: selectedNacosNamespace,
-                                      placeholder: const Text(
-                                        '选择nacos的namespace',
-                                      ),
+                                      value: selectedNacosNamespaceDataId,
+                                      placeholder: const Text('选择nacos的dataId'),
                                       popup: SelectPopup(
-                                        items: SelectItemList(children: _list),
+                                        items: SelectItemList(
+                                          children: nacosDataIdList,
+                                        ),
                                       ).call,
-                                    ),
-                                  )
-                                : Container(),
+                                    )
+                                  : Container(),
+                            ),
                           ],
                         ),
                         actions: [
