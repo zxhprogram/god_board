@@ -25,11 +25,26 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
   final _selectedNacosNamespace = Signal<String?>(null);
   final _selectedNacosNamespaceDataId = Signal<String?>(null);
   final _configsOfNacosNamespace = Signal<NacosConfigResponse?>(null);
+  final serviceListState = Signal<List<SelectItemButton<String>>>([]);
+  final _selectedNacosService = Signal<String?>(null);
 
   @override
   void initState() {
     super.initState();
     _fetchData();
+  }
+
+  @override
+  void dispose() {
+    podsState.dispose();
+    logPathInfoState.dispose();
+    _isLoadingStatus.dispose();
+    _fullLogState.dispose();
+    _selectedNacosNamespace.dispose();
+    _selectedNacosNamespaceDataId.dispose();
+    _configsOfNacosNamespace.dispose();
+    serviceListState.dispose();
+    super.dispose();
   }
 
   void _fetchData() async {
@@ -404,6 +419,22 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
         child: Text(e.namespaceShowName),
       );
     }).toList();
+    if (_selectedNacosNamespace.value != null) {
+      var serviceListResponse = await getNacosServices(
+        _selectedNacosNamespace.value!,
+      );
+      serviceListState.value = serviceListResponse.data!.serviceList.map((e) {
+        return SelectItemButton<String>(value: e.name, child: Text(e.name));
+      }).toList();
+    }
+    var responseOfNacosService = await getK8sNacosServiceMapping(
+      k8sNamespace: widget.namespace!,
+      k8sDeployment: widget.deployment!.name,
+    );
+    if (responseOfNacosService.data != null) {
+      _selectedNacosService.value =
+          responseOfNacosService.data!.nacosServiceName;
+    }
     showDialog(
       context: context,
       builder: (context) {
@@ -412,6 +443,8 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
         var selectedNacosNamespaceDataId = _selectedNacosNamespaceDataId.watch(
           context,
         );
+        var selectedNacosService = _selectedNacosService.watch(context);
+        var serviceList = serviceListState.watch(context);
         var nacosDataIdList = configsOfNacosNamespace == null
             ? <SelectItemButton<String>>[]
             : configsOfNacosNamespace.pageItems!.map((e) {
@@ -446,6 +479,18 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                     }
                     var r = await getNacosConfigs(value);
                     _configsOfNacosNamespace.value = r;
+
+                    var serviceListResponse = await getNacosServices(value);
+                    serviceListState.value = serviceListResponse
+                        .data!
+                        .serviceList
+                        .map((e) {
+                          return SelectItemButton<String>(
+                            value: e.name,
+                            child: Text(e.name),
+                          );
+                        })
+                        .toList();
                   },
                   value: selectedNacosNamespace,
                   placeholder: const Text('选择nacos的namespace'),
@@ -478,6 +523,26 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                       )
                     : Container(),
               ),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Select<String>(
+                  itemBuilder: (context, item) {
+                    return Text(item);
+                  },
+                  popupConstraints: const BoxConstraints(
+                    maxHeight: 300,
+                    maxWidth: 200,
+                  ),
+                  onChanged: (value) async {
+                    _selectedNacosService.value = value;
+                  },
+                  value: selectedNacosService,
+                  placeholder: const Text('选择nacos的实例服务'),
+                  popup: SelectPopup(
+                    items: SelectItemList(children: serviceList),
+                  ).call,
+                ),
+              ),
             ],
           ),
           actions: [
@@ -488,12 +553,20 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                     selectedNacosNamespace == null) {
                   return;
                 }
-                saveK8sNacosMapping(
+                await saveK8sNacosMapping(
                   k8sNamespace: widget.namespace!,
                   k8sDeployment: widget.deployment!.name,
                   nacosNamespace: selectedNacosNamespace,
                   nacosConfigId: selectedNacosNamespaceDataId,
                 );
+                if (selectedNacosService != null) {
+                  await saveK8sNacosServiceMapping(
+                    k8sNamespace: widget.namespace!,
+                    k8sDeployment: widget.deployment!.name,
+                    nacosNamespace: selectedNacosNamespace,
+                    nacosServiceName: selectedNacosService,
+                  );
+                }
                 Navigator.of(context).pop(controller.values);
               },
             ),
@@ -646,12 +719,6 @@ class _NacosConfigContentState extends State<NacosConfigContent> {
   @override
   Widget build(BuildContext context) {
     var content = contentState.watch(context);
-    return Card(
-      child: SelectableText(
-        (widget.configId == null || content == null || content.data == null)
-            ? ''
-            : content!.data!.content,
-      ),
-    );
+    return Card(child: SelectableText(content?.data?.content ?? ''));
   }
 }

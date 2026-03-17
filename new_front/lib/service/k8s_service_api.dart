@@ -82,6 +82,77 @@ Future<K8sNacosMappingResponse> getK8sNacosMapping({
   return .fromJson(response.data);
 }
 
+Future<void> saveK8sNacosServiceMapping({
+  required String k8sNamespace,
+  required String k8sDeployment,
+  required String nacosNamespace,
+  required String nacosServiceName,
+  String? nacosGroupName,
+}) async {
+  var data = {
+    'k8sNamespace': k8sNamespace,
+    'k8sDeployment': k8sDeployment,
+    'nacosNamespace': nacosNamespace,
+    'nacosServiceName': nacosServiceName,
+    'nacosGroupName': nacosGroupName ?? 'DEFAULT_GROUP',
+  };
+  var response = await dio.post('/api/mappings/k8s-nacos-service', data: data);
+  logger.i(response.data);
+}
+
+Future<K8sNacosMappingServiceResponse> getK8sNacosServiceMapping({
+  required String k8sNamespace,
+  required String k8sDeployment,
+}) async {
+  var response = await dio.get(
+      '/api/mappings/k8s-nacos-service?k8sNamespace=$k8sNamespace&k8sDeployment=$k8sDeployment');
+  logger.i(response.data);
+  return .fromJson(response.data);
+}
+
+class K8sNacosMappingServiceResponse extends Response {
+  K8sNacosMappingServiceData? data;
+
+  K8sNacosMappingServiceResponse(
+      {required super.code, super.message, this.data});
+
+  factory K8sNacosMappingServiceResponse.fromJson(Map<String, dynamic> json){
+    return .new(code: json['code'],
+        message: json['message'],
+        data: json['data'] == null ? null : K8sNacosMappingServiceData.fromJson(
+            json['data']));
+  }
+}
+
+class K8sNacosMappingServiceData {
+  int id;
+  String k8sNamespace;
+  String k8sDeployment;
+  String nacosNamespace;
+  String nacosServiceName;
+  String nacosGroupName;
+
+  K8sNacosMappingServiceData({
+    required this.id,
+    required this.k8sNamespace,
+    required this.k8sDeployment,
+    required this.nacosNamespace,
+    required this.nacosGroupName,
+    required this.nacosServiceName,
+  });
+
+  factory K8sNacosMappingServiceData.fromJson(Map<String, dynamic> json) {
+    return .new(
+      id: json['id'],
+      k8sNamespace: json['k8sNamespace'],
+      k8sDeployment: json['k8sDeployment'],
+      nacosNamespace: json['nacosNamespace'],
+      nacosGroupName: json['nacosGroupName'],
+      nacosServiceName: json['nacosServiceName'],
+    );
+  }
+}
+
 class K8sNacosMappingResponse extends Response {
   K8sNacosMappingData? data;
 
