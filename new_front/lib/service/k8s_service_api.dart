@@ -55,6 +55,22 @@ class K8sPodsResponse extends Response {
   }
 }
 
+Future<void> saveK8sNacosMapping({
+  required String k8sNamespace,
+  required String k8sDeployment,
+  required String nacosNamespace,
+  required String nacosConfigId,
+}) async {
+  var data = {
+    'k8sNamespace': k8sNamespace,
+    'k8sDeployment': k8sDeployment,
+    'nacosNamespace': nacosNamespace,
+    'nacosConfigId': nacosConfigId,
+  };
+  var response = await dio.post('/api/mappings/k8s-nacos', data: data);
+  logger.i(response.data);
+}
+
 class K8sPodsData {
   List<K8sPodsDataItem> items;
   int total;

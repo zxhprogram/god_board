@@ -1,5 +1,4 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:signals/signals.dart';
 import 'package:signals/signals_flutter.dart';
 
 import '../../service/k8s_service_api.dart';
@@ -161,111 +160,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
               Button.primary(
                 child: Text('配置nacos关联关系'),
                 onPressed: () async {
-                  await nacosLogin();
-                  var r = await getNacosNamespaces();
-                  if (r.data == null || r.data!.isEmpty) {
-                    return;
-                  }
-                  var _list = r.data!.map((e) {
-                    return SelectItemButton<String>(
-                      value: e.namespace,
-                      child: Text(e.namespaceShowName),
-                    );
-                  }).toList();
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      var selectedNacosNamespace = _selectedNacosNamespace
-                          .watch(context);
-                      var configsOfNacosNamespace = _configsOfNacosNamespace
-                          .watch(context);
-                      var selectedNacosNamespaceDataId =
-                          _selectedNacosNamespaceDataId.watch(context);
-                      var nacosDataIdList = configsOfNacosNamespace == null
-                          ? <SelectItemButton<String>>[]
-                          : configsOfNacosNamespace.pageItems!.map((e) {
-                              return SelectItemButton<String>(
-                                value: e.dataId,
-                                child: Text(e.dataId),
-                              );
-                            }).toList();
-                      final FormController controller = FormController();
-                      return AlertDialog(
-                        title: Text(
-                          '配置${widget.deployment!.name}关联的nacos托管配置文件',
-                        ),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('选择nacos的namespace和配置id'),
-                            const Gap(8),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 400),
-                              child: Select<String>(
-                                itemBuilder: (context, item) {
-                                  return Text(item);
-                                },
-                                popupConstraints: const BoxConstraints(
-                                  maxHeight: 300,
-                                  maxWidth: 200,
-                                ),
-                                onChanged: (value) async {
-                                  _selectedNacosNamespace.value = value;
-                                  if (value == null) {
-                                    return;
-                                  }
-                                  var r = await getNacosConfigs(value);
-                                  _configsOfNacosNamespace.value = r;
-                                },
-                                value: selectedNacosNamespace,
-                                placeholder: const Text('选择nacos的namespace'),
-                                popup: SelectPopup(
-                                  items: SelectItemList(children: _list),
-                                ).call,
-                              ),
-                            ),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 400),
-                              child:
-                                  (configsOfNacosNamespace != null &&
-                                      configsOfNacosNamespace.totalCount > 0)
-                                  ? Select<String>(
-                                      itemBuilder: (context, item) {
-                                        return Text(item);
-                                      },
-                                      popupConstraints: const BoxConstraints(
-                                        maxHeight: 300,
-                                        maxWidth: 200,
-                                      ),
-                                      onChanged: (value) {
-                                        print(value);
-                                        _selectedNacosNamespaceDataId.value =
-                                            value;
-                                      },
-                                      value: selectedNacosNamespaceDataId,
-                                      placeholder: const Text('选择nacos的dataId'),
-                                      popup: SelectPopup(
-                                        items: SelectItemList(
-                                          children: nacosDataIdList,
-                                        ),
-                                      ).call,
-                                    )
-                                  : Container(),
-                            ),
-                          ],
-                        ),
-                        actions: [
-                          PrimaryButton(
-                            child: const Text('保存'),
-                            onPressed: () async {
-                              Navigator.of(context).pop(controller.values);
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
+                  _configK8sMappingNacos();
                 },
               ),
               Button.primary(
@@ -278,6 +173,117 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
           ),
         ],
       ),
+    );
+  }
+
+  void _configK8sMappingNacos() async {
+    await nacosLogin();
+    var r = await getNacosNamespaces();
+    if (r.data == null || r.data!.isEmpty) {
+      return;
+    }
+    var _list = r.data!.map((e) {
+      return SelectItemButton<String>(
+        value: e.namespace,
+        child: Text(e.namespaceShowName),
+      );
+    }).toList();
+    showDialog(
+      context: context,
+      builder: (context) {
+        var selectedNacosNamespace = _selectedNacosNamespace.watch(context);
+        var configsOfNacosNamespace = _configsOfNacosNamespace.watch(context);
+        var selectedNacosNamespaceDataId = _selectedNacosNamespaceDataId.watch(
+          context,
+        );
+        var nacosDataIdList = configsOfNacosNamespace == null
+            ? <SelectItemButton<String>>[]
+            : configsOfNacosNamespace.pageItems!.map((e) {
+                return SelectItemButton<String>(
+                  value: e.dataId,
+                  child: Text(e.dataId),
+                );
+              }).toList();
+        final FormController controller = FormController();
+        return AlertDialog(
+          title: Text('配置${widget.deployment!.name}关联的nacos托管配置文件'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('选择nacos的namespace和配置id'),
+              const Gap(8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Select<String>(
+                  itemBuilder: (context, item) {
+                    return Text(item);
+                  },
+                  popupConstraints: const BoxConstraints(
+                    maxHeight: 300,
+                    maxWidth: 200,
+                  ),
+                  onChanged: (value) async {
+                    _selectedNacosNamespace.value = value;
+                    if (value == null) {
+                      return;
+                    }
+                    var r = await getNacosConfigs(value);
+                    _configsOfNacosNamespace.value = r;
+                  },
+                  value: selectedNacosNamespace,
+                  placeholder: const Text('选择nacos的namespace'),
+                  popup: SelectPopup(
+                    items: SelectItemList(children: _list),
+                  ).call,
+                ),
+              ),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child:
+                    (configsOfNacosNamespace != null &&
+                        configsOfNacosNamespace.totalCount > 0)
+                    ? Select<String>(
+                        itemBuilder: (context, item) {
+                          return Text(item);
+                        },
+                        popupConstraints: const BoxConstraints(
+                          maxHeight: 300,
+                          maxWidth: 200,
+                        ),
+                        onChanged: (value) {
+                          _selectedNacosNamespaceDataId.value = value;
+                        },
+                        value: selectedNacosNamespaceDataId,
+                        placeholder: const Text('选择nacos的dataId'),
+                        popup: SelectPopup(
+                          items: SelectItemList(children: nacosDataIdList),
+                        ).call,
+                      )
+                    : Container(),
+              ),
+            ],
+          ),
+          actions: [
+            PrimaryButton(
+              child: const Text('保存'),
+              onPressed: () async {
+                if (selectedNacosNamespaceDataId == null ||
+                    selectedNacosNamespace == null) {
+                  return;
+                }
+                saveK8sNacosMapping(
+                  k8sNamespace: widget.namespace!,
+                  k8sDeployment: widget.deployment!.name,
+                  nacosNamespace: selectedNacosNamespace,
+                  nacosConfigId: selectedNacosNamespaceDataId,
+                );
+                Navigator.of(context).pop(controller.values);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -318,7 +324,6 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
             PrimaryButton(
               child: const Text('保存'),
               onPressed: () async {
-                print(controller.values[FormKey(#name)]);
                 var logPath = controller.values[FormKey(#name)] as String?;
                 if (logPath == null) {
                   return;
