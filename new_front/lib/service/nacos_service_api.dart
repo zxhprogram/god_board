@@ -47,6 +47,7 @@ Future<NacosConfigDetailResponse> getNacosConfigDetail({
   required String serviceName,
   String group = 'DEFAULT_GROUP',
 }) async {
+  logger.i('namespace = $namespace serviceName = $serviceName}');
   var response = await dio.get(
     '/api/nacos/config/detail?namespaceId=$namespace&dataId=$serviceName&group=$group',
   );

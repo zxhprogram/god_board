@@ -600,7 +600,57 @@ class _K8sNacosInformationCard extends State<K8sNacosInformationCard> {
         children: [
           Text('nacos namespace :${mappingConfig?.nacosNamespace}'),
           Text('nacos dataId :${mappingConfig?.nacosConfigId}'),
+          NacosConfigContent(
+            namespace: mappingConfig?.nacosNamespace,
+            configId: mappingConfig?.nacosConfigId,
+            key: ValueKey(
+              '${widget.namespace}-${mappingConfig?.nacosConfigId}',
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class NacosConfigContent extends StatefulWidget {
+  final String? namespace;
+  final String? configId;
+
+  NacosConfigContent({required this.namespace, this.configId, super.key});
+
+  @override
+  State<NacosConfigContent> createState() => _NacosConfigContentState();
+}
+
+class _NacosConfigContentState extends State<NacosConfigContent> {
+  final contentState = Signal<NacosConfigDetailResponse?>(null);
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  void _fetchData() async {
+    if (widget.configId == null || widget.namespace == null) {
+      return;
+    }
+    var response = await getNacosConfigDetail(
+      namespace: widget.namespace!,
+      serviceName: widget.configId!,
+    );
+    contentState.value = response;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var content = contentState.watch(context);
+    return Card(
+      child: SelectableText(
+        (widget.configId == null || content == null || content.data == null)
+            ? ''
+            : content!.data!.content,
       ),
     );
   }
