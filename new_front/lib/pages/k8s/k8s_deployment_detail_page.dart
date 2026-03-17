@@ -2,6 +2,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:simple_icons/simple_icons.dart';
 
+import '../../config/global_config.dart';
 import '../../service/k8s_service_api.dart';
 import '../../service/log_service_api.dart';
 import '../../service/nacos_service_api.dart';
@@ -75,6 +76,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
       );
     }
     var state = _fullLogState.watch(context);
+    var pullMap = pullingLogPodMap.watch(context);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: .stretch,
@@ -310,16 +312,42 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
               Text('Pod 列表:').h4,
               ...r.data!.items.map((e) {
                 return Card(
-                  child: Column(
-                    crossAxisAlignment: .stretch,
+                  child: Row(
                     children: [
-                      Text('name: ${e.name}'),
-                      Text('namespace: ${e.namespace}'),
-                      Text('status: ${e.status}'),
-                      Text('ip: ${e.podIP}'),
-                      Text('node: ${e.nodeName}'),
-                      Text('restartCount: ${e.restartCount}'),
-                      Text('creationTimestamp: ${e.creationTimestamp}'),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: .stretch,
+                          children: [
+                            Text('name: ${e.name}'),
+                            Text('namespace: ${e.namespace}'),
+                            Text('status: ${e.status}'),
+                            Text('ip: ${e.podIP}'),
+                            Text('node: ${e.nodeName}'),
+                            Text('restartCount: ${e.restartCount}'),
+                            Text('creationTimestamp: ${e.creationTimestamp}'),
+                          ],
+                        ),
+                      ),
+                      Button.ghost(
+                        key: UniqueKey(),
+                        child: pullMap[e.name] == null
+                            ? Icon(Icons.play_circle, size: 50)
+                            : Icon(Icons.pause_circle, size: 50),
+                        onPressed: () {
+                          if (pullMap[e.name] != null) {
+                            pullMap.remove(e.name);
+                            var newMap = Map<String, bool>.from(pullMap);
+                            pullingLogPodMap.value = newMap;
+                            print(pullingLogPodMap.value);
+                            return;
+                          }
+                          var newMap = Map<String, bool>.from(
+                            pullingLogPodMap.value,
+                          );
+                          newMap[e.name] = true;
+                          pullingLogPodMap.value = newMap;
+                        },
+                      ),
                     ],
                   ),
                 );
