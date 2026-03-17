@@ -87,7 +87,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                 Expanded(
                   child: TextField(
                     placeholder: Text(
-                      logPathInfo == null
+                      (logPathInfo == null || logPathInfo.data == null)
                           ? '/app/logs/'
                           : logPathInfo.data!.logPath,
                     ),
@@ -121,8 +121,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                 Text('image : ${widget.deployment!.containers[0].image}'),
                 Text('name : ${widget.deployment!.containers[0].name}'),
                 Text(
-                  'imagePullPolicy : ${widget.deployment!.containers[0]
-                      .imagePullPolicy}',
+                  'imagePullPolicy : ${widget.deployment!.containers[0].imagePullPolicy}',
                 ),
                 Text('command : ${widget.deployment!.containers[0].command}'),
                 Text('args : ${widget.deployment!.containers[0].args}'),
@@ -154,6 +153,11 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                 );
               }),
             ],
+          ),
+          K8sNacosInformationCard(
+            namespace: widget.namespace!,
+            deployment: widget.deployment!.name,
+            key: UniqueKey(),
           ),
           Row(
             mainAxisAlignment: .center,
@@ -211,11 +215,11 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
         var nacosDataIdList = configsOfNacosNamespace == null
             ? <SelectItemButton<String>>[]
             : configsOfNacosNamespace.pageItems!.map((e) {
-          return SelectItemButton<String>(
-            value: e.dataId,
-            child: Text(e.dataId),
-          );
-        }).toList();
+                return SelectItemButton<String>(
+                  value: e.dataId,
+                  child: Text(e.dataId),
+                );
+              }).toList();
         final FormController controller = FormController();
         return AlertDialog(
           title: Text('配置${widget.deployment!.name}关联的nacos托管配置文件'),
@@ -253,25 +257,25 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child:
-                (configsOfNacosNamespace != null &&
-                    configsOfNacosNamespace.totalCount > 0)
+                    (configsOfNacosNamespace != null &&
+                        configsOfNacosNamespace.totalCount > 0)
                     ? Select<String>(
-                  itemBuilder: (context, item) {
-                    return Text(item);
-                  },
-                  popupConstraints: const BoxConstraints(
-                    maxHeight: 300,
-                    maxWidth: 200,
-                  ),
-                  onChanged: (value) {
-                    _selectedNacosNamespaceDataId.value = value;
-                  },
-                  value: selectedNacosNamespaceDataId,
-                  placeholder: const Text('选择nacos的dataId'),
-                  popup: SelectPopup(
-                    items: SelectItemList(children: nacosDataIdList),
-                  ).call,
-                )
+                        itemBuilder: (context, item) {
+                          return Text(item);
+                        },
+                        popupConstraints: const BoxConstraints(
+                          maxHeight: 300,
+                          maxWidth: 200,
+                        ),
+                        onChanged: (value) {
+                          _selectedNacosNamespaceDataId.value = value;
+                        },
+                        value: selectedNacosNamespaceDataId,
+                        placeholder: const Text('选择nacos的dataId'),
+                        popup: SelectPopup(
+                          items: SelectItemList(children: nacosDataIdList),
+                        ).call,
+                      )
                     : Container(),
               ),
             ],
@@ -322,7 +326,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                         key: FormKey(#name),
                         label: Text('Name'),
                         child: TextField(
-                          initialValue: logPathInfo?.data!.logPath,
+                          initialValue: logPathInfo?.data?.logPath,
                           autofocus: true,
                         ),
                       ),
@@ -341,7 +345,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                   return;
                 }
                 await saveLogPathConfig(
-                  id: logPathInfo?.data!.id,
+                  id: logPathInfo?.data?.id,
                   k8sNamespace: widget.namespace!,
                   k8sDeployment: widget.deployment!.name,
                   logPath: logPath,
@@ -352,6 +356,52 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
           ],
         );
       },
+    );
+  }
+}
+
+class K8sNacosInformationCard extends StatefulWidget {
+  final String namespace;
+  final String deployment;
+
+  K8sNacosInformationCard({
+    required this.namespace,
+    required this.deployment,
+    super.key,
+  });
+
+  @override
+  State<StatefulWidget> createState() => _K8sNacosInformationCard();
+}
+
+class _K8sNacosInformationCard extends State<K8sNacosInformationCard> {
+  final _mappingConfigState = Signal<K8sNacosMappingData?>(null);
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  void _fetchData() async {
+    var mappingConfig = await getK8sNacosMapping(
+      namespace: widget.namespace,
+      deployment: widget.deployment,
+    );
+    _mappingConfigState.value = mappingConfig.data;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var mappingConfig = _mappingConfigState.watch(context);
+    return Card(
+      child: Column(
+        crossAxisAlignment: .start,
+        children: [
+          Text('nacos namespace :${mappingConfig?.nacosNamespace}'),
+          Text('nacos dataId :${mappingConfig?.nacosConfigId}'),
+        ],
+      ),
     );
   }
 }

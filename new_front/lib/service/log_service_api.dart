@@ -39,7 +39,9 @@ class DeploymentLogPathResponse extends Response {
     return .new(
       code: json['code'],
       message: json['message'],
-      data: DeploymentLogPathData.fromJson(json['data']),
+      data: json['data'] == null
+          ? null
+          : DeploymentLogPathData.fromJson(json['data']),
     );
   }
 }

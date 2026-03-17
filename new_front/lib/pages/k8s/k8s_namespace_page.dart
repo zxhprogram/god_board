@@ -80,9 +80,6 @@ class _K8sNamespacePageState extends State<K8sNamespacePage> {
             return Container();
           }
           return MouseRegion(
-            onEnter: (_) {
-              print(index);
-            },
             child: ListTile(
               selected: i == index,
               selectedColor: Colors.blue,
