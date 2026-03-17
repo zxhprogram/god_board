@@ -4,6 +4,7 @@ import 'package:signals/signals_flutter.dart';
 
 import '../../service/k8s_service_api.dart';
 import '../../service/log_service_api.dart';
+import '../../service/nacos_service_api.dart';
 
 class K8sDeploymentDetailPage extends StatefulWidget {
   final K8sDeploymentsDataItem? deployment;
@@ -20,6 +21,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
   var logPathInfoState = Signal<DeploymentLogPathResponse?>(null);
   final _isLoadingStatus = Signal(true);
   final _fullLogState = Signal<CheckboxState>(.unchecked);
+  final _selectedNacosNamespace = Signal<String?>(null);
 
   @override
   void initState() {
@@ -49,6 +51,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
     var isLoading = _isLoadingStatus.watch(context);
     var r = podsState.watch(context);
     var logPathInfo = logPathInfoState.watch(context);
+
     if (isLoading) {
       return const Center(
         child: Column(
@@ -70,6 +73,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
       );
     }
     var state = _fullLogState.watch(context);
+    var selectedNacosNamespace = _selectedNacosNamespace.watch(context);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: .stretch,
@@ -153,40 +157,53 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
           Row(
             mainAxisAlignment: .center,
             children: [
-              Button.primary(child: Text('配置nacos关联关系'), onPressed: () {}),
               Button.primary(
-                child: Text('配置默认日志路径'),
-                onPressed: () {
+                child: Text('配置nacos关联关系'),
+                onPressed: () async {
+                  await nacosLogin();
+                  var r = await getNacosNamespaces();
+                  if (r.data == null || r.data!.isEmpty) {
+                    return;
+                  }
+                  var _list = r.data!.map((e) {
+                    return SelectItemButton(
+                      value: e.namespace,
+                      child: Text(e.namespaceShowName),
+                    );
+                  }).toList();
                   showDialog(
                     context: context,
                     builder: (context) {
                       final FormController controller = FormController();
                       return AlertDialog(
-                        title: Text('配置${widget.deployment!.name}默认日志路径'),
+                        title: Text(
+                          '配置${widget.deployment!.name}关联的nacos托管配置文件',
+                        ),
                         content: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('配置的日志路径需要确保正确，日志路径应该是绝对路径'),
+                            const Text('选择nacos的namespace和配置id'),
                             const Gap(16),
                             ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: 400),
-                              child: Form(
-                                controller: controller,
-                                child: FormTableLayout(
-                                  rows: [
-                                    FormField<String>(
-                                      key: FormKey(#name),
-                                      label: Text('Name'),
-                                      child: TextField(
-                                        initialValue:
-                                            logPathInfo?.data!.logPath,
-                                        autofocus: true,
-                                      ),
-                                    ),
-                                  ],
+                              child: Select<String>(
+                                itemBuilder: (context, item) {
+                                  return Text(item);
+                                },
+                                popupConstraints: const BoxConstraints(
+                                  maxHeight: 300,
+                                  maxWidth: 200,
                                 ),
-                              ).withPadding(vertical: 16),
+                                onChanged: (value) {
+                                  _selectedNacosNamespace.value = value;
+                                },
+                                value: selectedNacosNamespace,
+                                placeholder: const Text('Select a fruit'),
+                                popup: SelectPopup(
+                                  items: SelectItemList(children: _list),
+                                ).call,
+                              ),
                             ),
                           ],
                         ),
@@ -194,18 +211,6 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                           PrimaryButton(
                             child: const Text('保存'),
                             onPressed: () async {
-                              print(controller.values[FormKey(#name)]);
-                              var logPath =
-                                  controller.values[FormKey(#name)] as String?;
-                              if (logPath == null) {
-                                return;
-                              }
-                              await saveLogPathConfig(
-                                id: logPathInfo?.data!.id,
-                                k8sNamespace: widget.namespace!,
-                                k8sDeployment: widget.deployment!.name,
-                                logPath: logPath,
-                              );
                               Navigator.of(context).pop(controller.values);
                             },
                           ),
@@ -215,10 +220,73 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                   );
                 },
               ),
+              Button.primary(
+                child: Text('配置默认日志路径'),
+                onPressed: () {
+                  _configLogPath(logPathInfo);
+                },
+              ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  void _configLogPath(DeploymentLogPathResponse? logPathInfo) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final FormController controller = FormController();
+        return AlertDialog(
+          title: Text('配置${widget.deployment!.name}默认日志路径'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('配置的日志路径需要确保正确，日志路径应该是绝对路径'),
+              const Gap(16),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Form(
+                  controller: controller,
+                  child: FormTableLayout(
+                    rows: [
+                      FormField<String>(
+                        key: FormKey(#name),
+                        label: Text('Name'),
+                        child: TextField(
+                          initialValue: logPathInfo?.data!.logPath,
+                          autofocus: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ).withPadding(vertical: 16),
+              ),
+            ],
+          ),
+          actions: [
+            PrimaryButton(
+              child: const Text('保存'),
+              onPressed: () async {
+                print(controller.values[FormKey(#name)]);
+                var logPath = controller.values[FormKey(#name)] as String?;
+                if (logPath == null) {
+                  return;
+                }
+                await saveLogPathConfig(
+                  id: logPathInfo?.data!.id,
+                  k8sNamespace: widget.namespace!,
+                  k8sDeployment: widget.deployment!.name,
+                  logPath: logPath,
+                );
+                Navigator.of(context).pop(controller.values);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
