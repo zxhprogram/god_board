@@ -22,6 +22,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
   final _isLoadingStatus = Signal(true);
   final _fullLogState = Signal<CheckboxState>(.unchecked);
   final _selectedNacosNamespace = Signal<String?>(null);
+  final _configsOfNacosNamespace = Signal<NacosConfigResponse?>(null);
 
   @override
   void initState() {
@@ -74,6 +75,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
     }
     var state = _fullLogState.watch(context);
     var selectedNacosNamespace = _selectedNacosNamespace.watch(context);
+    var configsOfNacosNamespace = _configsOfNacosNamespace.watch(context);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: .stretch,
@@ -184,7 +186,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text('选择nacos的namespace和配置id'),
-                            const Gap(16),
+                            const Gap(8),
                             ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: 400),
                               child: Select<String>(
@@ -195,16 +197,48 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                                   maxHeight: 300,
                                   maxWidth: 200,
                                 ),
-                                onChanged: (value) {
+                                onChanged: (value) async {
                                   _selectedNacosNamespace.value = value;
+                                  if (value == null) {
+                                    return;
+                                  }
+                                  var r = await getNacosConfigs(value);
+                                  _configsOfNacosNamespace.value = r;
                                 },
                                 value: selectedNacosNamespace,
-                                placeholder: const Text('Select a fruit'),
+                                placeholder: const Text('选择nacos的namespace'),
                                 popup: SelectPopup(
                                   items: SelectItemList(children: _list),
                                 ).call,
                               ),
                             ),
+                            (configsOfNacosNamespace != null &&
+                                    configsOfNacosNamespace!.totalCount > 0)
+                                ? ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 400,
+                                    ),
+                                    child: Select<String>(
+                                      itemBuilder: (context, item) {
+                                        return Text(item);
+                                      },
+                                      popupConstraints: const BoxConstraints(
+                                        maxHeight: 300,
+                                        maxWidth: 200,
+                                      ),
+                                      onChanged: (value) {
+                                        _selectedNacosNamespace.value = value;
+                                      },
+                                      value: selectedNacosNamespace,
+                                      placeholder: const Text(
+                                        '选择nacos的namespace',
+                                      ),
+                                      popup: SelectPopup(
+                                        items: SelectItemList(children: _list),
+                                      ).call,
+                                    ),
+                                  )
+                                : Container(),
                           ],
                         ),
                         actions: [
