@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:simple_icons/simple_icons.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../config/global_config.dart';
 import '../../service/k8s_service_api.dart';
 import '../../service/log_service_api.dart';
 import '../../service/nacos_service_api.dart';
+import '../../service/node_service_api.dart';
 
 class K8sDeploymentDetailPage extends StatefulWidget {
   final K8sDeploymentsDataItem? deployment;
@@ -27,6 +31,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
   final _configsOfNacosNamespace = Signal<NacosConfigResponse?>(null);
   final serviceListState = Signal<List<SelectItemButton<String>>>([]);
   final _selectedNacosService = Signal<String?>(null);
+  final _logPathController = TextEditingController();
 
   @override
   void initState() {
@@ -104,6 +109,11 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
               children: [
                 Expanded(
                   child: TextField(
+                    controller: _logPathController,
+                    initialValue:
+                        (logPathInfo == null || logPathInfo.data == null)
+                        ? '/app/logs/'
+                        : logPathInfo.data!.logPath,
                     placeholder: Text(
                       (logPathInfo == null || logPathInfo.data == null)
                           ? '/app/logs/'
@@ -346,21 +356,18 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
                       Button.ghost(
                         key: UniqueKey(),
                         child: pullMap[e.name] == null
-                            ? Icon(Icons.play_circle, size: 50)
-                            : Icon(Icons.pause_circle, size: 50),
+                            ? Icon(
+                                Icons.play_circle,
+                                size: 50,
+                                color: Colors.green,
+                              )
+                            : Icon(
+                                Icons.pause_circle,
+                                size: 50,
+                                color: Colors.red,
+                              ),
                         onPressed: () {
-                          if (pullMap[e.name] != null) {
-                            pullMap.remove(e.name);
-                            var newMap = Map<String, bool>.from(pullMap);
-                            pullingLogPodMap.value = newMap;
-                            print(pullingLogPodMap.value);
-                            return;
-                          }
-                          var newMap = Map<String, bool>.from(
-                            pullingLogPodMap.value,
-                          );
-                          newMap[e.name] = true;
-                          pullingLogPodMap.value = newMap;
+                          startOrStopLogStream(pullMap, e);
                         },
                       ),
                     ],
@@ -394,6 +401,47 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
         ],
       ),
     );
+  }
+
+  final _buffer = <String>[];
+  final _bufferSizeThreshold = 10;
+
+  void startOrStopLogStream(
+    Map<String, bool> pullMap,
+    K8sPodsDataItem e,
+  ) async {
+    if (pullMap[e.name] != null) {
+      pullingLogPodMap.value = Map<String, bool>.from(pullMap..remove(e.name));
+      return;
+    }
+    pullingLogPodMap.value = Map<String, bool>.from(pullingLogPodMap.value)
+      ..[e.name] = true;
+    var logStreamResponse = await registerLogStream(
+      k8sNamespace: widget.namespace!,
+      podName: e.name,
+      logPath: _logPathController.text,
+    );
+    if (logStreamResponse.wsUrl == null) {
+      return;
+    }
+
+    final fileName =
+        '${e.name}${_logPathController.text.substring(_logPathController.text.lastIndexOf('/'))}.log';
+    final file = File(fileName);
+    if (file.existsSync()) {
+      file.deleteSync();
+    }
+    file.createSync();
+    final ws = WebSocketChannel.connect(Uri.parse(logStreamResponse.wsUrl!));
+    ws.stream.listen((message) {
+      _buffer.add(message.toString());
+      if (_buffer.length >= _bufferSizeThreshold) {
+        final linesToWrite = List<String>.from(_buffer);
+        _buffer.clear();
+        var content = '${linesToWrite.join('\n')}\n';
+        file.writeAsString(content, mode: .append);
+      }
+    });
   }
 
   void _configK8sMappingNacos() async {
