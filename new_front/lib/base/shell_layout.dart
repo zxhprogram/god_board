@@ -81,7 +81,7 @@ class _ShellLayoutState extends State<ShellLayout> {
                             children: [
                               MenuButton(
                                 leading: const Icon(Icons.settings),
-                                child: const Text('Server Settings'),
+                                child: const Text('k8s服务器配置'),
                                 onPressed: (ctx) {
                                   context.go('/settings');
                                 },
