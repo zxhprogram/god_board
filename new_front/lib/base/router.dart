@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:new_front/base/nacos_settings_page.dart';
 import 'package:new_front/base/settings_page.dart';
 import 'package:new_front/base/shell_layout.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -18,6 +19,10 @@ final GoRouter router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (context, state) => const HomePage()),
         GoRoute(path: '/settings', builder: (context, state) => SettingsPage()),
+        GoRoute(
+          path: '/nacosSettings',
+          builder: (context, state) => NacosSettingsPage(),
+        ),
         ShellRoute(
           builder: (context, state, child) => Column(
             crossAxisAlignment: .start,

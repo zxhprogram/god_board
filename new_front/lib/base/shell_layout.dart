@@ -15,11 +15,11 @@ class _ShellLayoutState extends State<ShellLayout> {
   bool expanded = false;
 
   NavigationItem buildButton(
-      String text,
-      IconData icon, {
-        required String path,
-        bool isSelected = false,
-      }) {
+    String text,
+    IconData icon, {
+    required String path,
+    bool isSelected = false,
+  }) {
     return NavigationItem(
       label: Text(text),
       selectedStyle: const ButtonStyle.primaryIcon(),
@@ -63,9 +63,7 @@ class _ShellLayoutState extends State<ShellLayout> {
                   return NavigationSlot(
                     leading: IconContainer(
                       backgroundColor: Colors.blue,
-                      icon: const Icon(
-                        LucideIcons.radioTower,
-                      ).iconMedium,
+                      icon: const Icon(LucideIcons.radioTower).iconMedium,
                     ),
                     title: const Text('God Board').medium.small,
                     subtitle: const Text('中国铁塔视联平台').xSmall.normal,
@@ -84,6 +82,13 @@ class _ShellLayoutState extends State<ShellLayout> {
                                 child: const Text('k8s服务器配置'),
                                 onPressed: (ctx) {
                                   context.go('/settings');
+                                },
+                              ),
+                              MenuButton(
+                                leading: const Icon(Icons.settings),
+                                child: const Text('nacos服务器配置'),
+                                onPressed: (ctx) {
+                                  context.go('/nacosSettings');
                                 },
                               ),
                               MenuButton(
