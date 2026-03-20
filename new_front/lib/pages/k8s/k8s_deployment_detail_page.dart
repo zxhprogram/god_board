@@ -409,7 +409,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
   Future<void> _flushBufferToFile(List<String> buffer, File file) async {
     if (buffer.isEmpty) return;
     try {
-      final content = buffer.join('\n') + '\n';
+      final content = '${buffer.join('\n')}\n';
       await file.writeAsString(content, mode: FileMode.append, flush: true);
     } catch (e, stackTrace) {
       logger.e('写入日志文件失败: $e', stackTrace: stackTrace);
