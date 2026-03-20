@@ -93,6 +93,13 @@ class _ShellLayoutState extends State<ShellLayout> {
                               ),
                               MenuButton(
                                 leading: const Icon(Icons.settings),
+                                child: const Text('日志服务器配置'),
+                                onPressed: (ctx) {
+                                  context.go('/logServerSettings');
+                                },
+                              ),
+                              MenuButton(
+                                leading: const Icon(Icons.settings),
                                 child: const Text('Newland Gateway'),
                                 onPressed: (ctx) {
                                   context.go('/newland-gateway');

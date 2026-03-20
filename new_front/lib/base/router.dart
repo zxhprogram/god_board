@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:new_front/base/log_server_settings_page.dart';
 import 'package:new_front/base/nacos_settings_page.dart';
 import 'package:new_front/base/settings_page.dart';
 import 'package:new_front/base/shell_layout.dart';
@@ -22,6 +23,10 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/nacosSettings',
           builder: (context, state) => NacosSettingsPage(),
+        ),
+        GoRoute(
+          path: '/logServerSettings',
+          builder: (context, state) => LogServerSettingsPage(),
         ),
         ShellRoute(
           builder: (context, state, child) => Column(

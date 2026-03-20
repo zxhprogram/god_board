@@ -42,6 +42,11 @@ class LogStreamInformation {
   String? nodeServerAddress;
 
   LogStreamInformation({this.response, this.wsUrl, this.nodeServerAddress});
+
+  @override
+  String toString() {
+    return '{response = $response, wsUrl = $wsUrl, nodeServerAddress = $nodeServerAddress}';
+  }
 }
 
 class StartLogStreamResponse {
@@ -61,6 +66,11 @@ class StartLogStreamResponse {
       message: json['message'],
       processId: json['processId'],
     );
+  }
+
+  @override
+  String toString() {
+    return '{success = $success , message = $message , processId = $processId}';
   }
 }
 

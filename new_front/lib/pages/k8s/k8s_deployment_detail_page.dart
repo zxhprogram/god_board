@@ -410,6 +410,7 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
     Map<String, bool> pullMap,
     K8sPodsDataItem e,
   ) async {
+    logger.i('开始输出日志 pullMap = $pullMap, e = $e}');
     if (pullMap[e.name] != null) {
       pullingLogPodMap.value = Map<String, bool>.from(pullMap..remove(e.name));
       return;
@@ -421,27 +422,48 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
       podName: e.name,
       logPath: _logPathController.text,
     );
+    logger.i('logStreamResponse = $logStreamResponse');
     if (logStreamResponse.wsUrl == null) {
+      logger.e('wsUrl is null');
       return;
     }
 
     final fileName =
-        '${e.name}${_logPathController.text.substring(_logPathController.text.lastIndexOf('/'))}.log';
+        '${e.name}-${_logPathController.text.substring(_logPathController.text.lastIndexOf('/') + 1)}.log';
+
+    logger.i('fileName = $fileName');
     final file = File(fileName);
-    if (file.existsSync()) {
-      file.deleteSync();
-    }
-    file.createSync();
-    final ws = WebSocketChannel.connect(Uri.parse(logStreamResponse.wsUrl!));
-    ws.stream.listen((message) {
-      _buffer.add(message.toString());
-      if (_buffer.length >= _bufferSizeThreshold) {
-        final linesToWrite = List<String>.from(_buffer);
-        _buffer.clear();
-        var content = '${linesToWrite.join('\n')}\n';
-        file.writeAsString(content, mode: .append);
+    try {
+      if (file.existsSync()) {
+        file.deleteSync();
       }
-    });
+      file.createSync();
+    } catch (e) {
+      logger.e('文件操作失败', stackTrace: .current);
+    }
+    try {
+      final ws = WebSocketChannel.connect(Uri.parse(logStreamResponse.wsUrl!));
+      ws.stream.listen(
+        (message) {
+          logger.i(message);
+          _buffer.add(message.toString());
+          if (_buffer.length >= _bufferSizeThreshold) {
+            final linesToWrite = List<String>.from(_buffer);
+            _buffer.clear();
+            var content = '${linesToWrite.join('\n')}\n';
+            file.writeAsString(content, mode: .append);
+          }
+        },
+        onError: (e) {
+          logger.e('ws 返回错误 $e', stackTrace: .current);
+        },
+        onDone: () {
+          logger.i('ws 正常结束');
+        },
+      );
+    } catch (e) {
+      logger.e('日志监听失败 $e', stackTrace: .current);
+    }
   }
 
   void _configK8sMappingNacos() async {
