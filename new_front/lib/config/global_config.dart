@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:signals/signals_flutter.dart';
@@ -17,3 +19,7 @@ var logger = Logger(
   ]),
 );
 final pullingLogPodMap = Signal<Map<String,WebSocketChannel?>>({});
+// 每个 Pod 的日志缓冲区管理
+final podLogBuffers = <String, List<String>>{};
+final bufferSizeThreshold = 1000;
+final flushTimerMap = <String, Timer>{};

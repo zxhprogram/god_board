@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -404,8 +405,28 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
     );
   }
 
-  final _buffer = <String>[];
-  final _bufferSizeThreshold = 10;
+  /// 将缓冲区内容写入文件
+  Future<void> _flushBufferToFile(List<String> buffer, File file) async {
+    if (buffer.isEmpty) return;
+    try {
+      final content = buffer.join('\n') + '\n';
+      await file.writeAsString(content, mode: FileMode.append, flush: true);
+    } catch (e, stackTrace) {
+      logger.e('写入日志文件失败: $e', stackTrace: stackTrace);
+    }
+  }
+
+  /// 刷新指定 Pod 的日志缓冲区到文件
+  Future<void> _flushPodBuffer(String podName, File file) async {
+    final buffer = podLogBuffers[podName];
+    if (buffer == null || buffer.isEmpty) return;
+
+    // 复制并清空缓冲区
+    final linesToWrite = List<String>.from(buffer);
+    buffer.clear();
+
+    await _flushBufferToFile(linesToWrite, file);
+  }
 
   void startOrStopLogStream(
     Map<String, WebSocketChannel?> pullMap,
@@ -414,6 +435,9 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
     logger.i('开始输出日志 pullMap = $pullMap, e = $e}');
     if (pullMap[e.name] != null) {
       var ws = pullMap[e.name]!;
+      // 先刷新缓冲区再关闭连接，确保数据不丢失
+      await _flushPodBuffer(e.name, _podLogFiles[e.name]!);
+      _cleanupPodLogResources(e.name);
       ws.sink.close(status.normalClosure);
       pullingLogPodMap.value = Map<String, WebSocketChannel?>.from(
         pullMap..remove(e.name),
@@ -441,35 +465,67 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
         file.deleteSync();
       }
       file.createSync();
-    } catch (e) {
-      logger.e('文件操作失败', stackTrace: .current);
+      _podLogFiles[e.name] = file;
+    } catch (e, stackTrace) {
+      logger.e('文件操作失败: $e', stackTrace: stackTrace);
+      return;
     }
+
+    // 初始化该 Pod 的缓冲区
+    podLogBuffers[e.name] = <String>[];
+
+    // 启动定时刷新，每 500ms 强制刷新一次，避免数据滞留
+    flushTimerMap[e.name]?.cancel();
+    flushTimerMap[e.name] = Timer.periodic(
+      const Duration(milliseconds: 500),
+      (_) => _flushPodBuffer(e.name, file),
+    );
+
     try {
       final ws = WebSocketChannel.connect(Uri.parse(logStreamResponse.wsUrl!));
       ws.stream.listen(
         (message) {
-          _buffer.add(message.toString());
-          if (_buffer.length >= _bufferSizeThreshold) {
-            final linesToWrite = List<String>.from(_buffer);
-            _buffer.clear();
-            var content = '${linesToWrite.join('\n')}\n';
-            file.writeAsString(content, mode: .append);
+          final buffer = podLogBuffers[e.name];
+          if (buffer == null) return;
+
+          buffer.add(message.toString());
+
+          // 达到阈值时立即刷新
+          if (buffer.length >= bufferSizeThreshold) {
+            final linesToWrite = List<String>.from(buffer);
+            buffer.clear();
+            _flushBufferToFile(linesToWrite, file);
           }
         },
-        onError: (e) {
-          logger.e('ws 返回错误 $e', stackTrace: .current);
+        onError: (error) {
+          logger.e('ws 返回错误: $error', stackTrace: StackTrace.current);
         },
-        onDone: () {
-          logger.i('ws 正常结束');
+        onDone: () async {
+          logger.i('ws 正常结束，pod: ${e.name}');
+          // 连接结束时刷新剩余数据
+          await _flushPodBuffer(e.name, file);
+          _cleanupPodLogResources(e.name);
         },
       );
       pullingLogPodMap.value = Map<String, WebSocketChannel?>.from(
         pullingLogPodMap.value,
       )..[e.name] = ws;
-    } catch (e) {
-      logger.e('日志监听失败 $e', stackTrace: .current);
+    } catch (er, stackTrace) {
+      logger.e('日志监听失败: $er', stackTrace: stackTrace);
+      _cleanupPodLogResources(e.name);
     }
   }
+
+  /// 清理 Pod 日志相关资源
+  void _cleanupPodLogResources(String podName) {
+    flushTimerMap[podName]?.cancel();
+    flushTimerMap.remove(podName);
+    podLogBuffers.remove(podName);
+    _podLogFiles.remove(podName);
+  }
+
+  // 存储每个 Pod 对应的日志文件
+  final _podLogFiles = <String, File>{};
 
   void _configK8sMappingNacos() async {
     var mappingConfig = await getK8sNacosMapping(

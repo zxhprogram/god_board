@@ -21,14 +21,14 @@ Future<LogStreamInformation> registerLogStream({
     'container': k8sDeployment,
   };
   var response = await dio.post(
-    '${nodeServerConfig.data!.address}/start-log-stream1',
+    '${nodeServerConfig.data!.address}/start-log-stream',
     data: data,
   );
 
   logger.i(response.data);
   var r = StartLogStreamResponse.fromJson(response.data);
   String wsUrl =
-      '${nodeServerConfig.data!.address.replaceAll('http', 'ws')}/ws/log-stream1?namespace=$k8sNamespace&podName=$podName&logPath=$logPath';
+      '${nodeServerConfig.data!.address.replaceAll('http', 'ws')}/ws/log-stream?namespace=$k8sNamespace&podName=$podName&logPath=$logPath';
   return .new(
     response: r,
     wsUrl: wsUrl,
