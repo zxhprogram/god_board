@@ -4,6 +4,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:simple_icons/simple_icons.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/status.dart' as status;
 
 import '../../config/global_config.dart';
 import '../../service/k8s_service_api.dart';
@@ -407,16 +408,18 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
   final _bufferSizeThreshold = 10;
 
   void startOrStopLogStream(
-    Map<String, bool> pullMap,
+    Map<String, WebSocketChannel?> pullMap,
     K8sPodsDataItem e,
   ) async {
     logger.i('开始输出日志 pullMap = $pullMap, e = $e}');
     if (pullMap[e.name] != null) {
-      pullingLogPodMap.value = Map<String, bool>.from(pullMap..remove(e.name));
+      var ws = pullMap[e.name]!;
+      ws.sink.close(status.normalClosure);
+      pullingLogPodMap.value = Map<String, WebSocketChannel?>.from(
+        pullMap..remove(e.name),
+      );
       return;
     }
-    pullingLogPodMap.value = Map<String, bool>.from(pullingLogPodMap.value)
-      ..[e.name] = true;
     var logStreamResponse = await registerLogStream(
       k8sNamespace: widget.namespace!,
       podName: e.name,
@@ -461,6 +464,9 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
           logger.i('ws 正常结束');
         },
       );
+      pullingLogPodMap.value = Map<String, WebSocketChannel?>.from(
+        pullingLogPodMap.value,
+      )..[e.name] = ws;
     } catch (e) {
       logger.e('日志监听失败 $e', stackTrace: .current);
     }
