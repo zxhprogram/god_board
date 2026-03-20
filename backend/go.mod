@@ -3,7 +3,11 @@ module god-board
 go 1.25.0
 
 require (
+	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.11.0
+	github.com/redis/go-redis/v9 v9.18.0
+	gorm.io/driver/sqlite v1.6.0
+	gorm.io/gorm v1.31.1
 	k8s.io/api v0.32.0
 	k8s.io/apimachinery v0.32.0
 	k8s.io/client-go v0.32.0
@@ -13,8 +17,10 @@ require (
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
@@ -56,6 +62,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	golang.org/x/arch v0.24.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
@@ -69,8 +76,6 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/sqlite v1.6.0 // indirect
-	gorm.io/gorm v1.31.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738 // indirect

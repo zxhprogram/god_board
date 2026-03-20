@@ -261,6 +261,31 @@ class _DeploymentDetailPageState extends State<DeploymentDetailPage> {
             ],
           ),
           const SizedBox(height: 4),
+          Row(
+            children: [
+              Button.primary(
+                child: Icon(Icons.play_arrow),
+                onPressed: () async {
+                  final response = await ApiService.getK8sPods(
+                    widget.namespace,
+                    widget.deployment,
+                  );
+
+                  if (response['code'] == 200 && response['data'] != null) {
+                    final data = response['data'];
+                    final items = data['items'] as List<dynamic>? ?? [];
+                    print(items);
+                    if (items.isEmpty) {
+                      return;
+                    }
+
+                  }
+                },
+              ),
+              Text('一键拉取所有日志到本地'),
+            ],
+          ),
+          const SizedBox(height: 4),
           // 基本信息卡片
           BasicInfoCard(state: _state),
           const SizedBox(height: 4),

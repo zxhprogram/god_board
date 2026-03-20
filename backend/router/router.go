@@ -5,11 +5,13 @@ import (
 	"god-board/db"
 	"god-board/handlers"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
+	r.Use(cors.Default())
 
 	// Nacos 路由
 	r.POST("/api/nacos/login", handlers.HandleLogin)

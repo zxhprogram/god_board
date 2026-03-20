@@ -11,13 +11,19 @@ GET http://localhost:8080/api/nacos/namespaces
 GET http://localhost:8080/api/nacos/configs?namespaceId=da536c77-40f2-48e0-b475-8da7b2fd0cdd
 
 ###
+GET http://localhost:8080/api/nacos/config/detail?namespaceId=da536c77-40f2-48e0-b475-8da7b2fd0cdd&
+    dataId=video-file.yaml&group=DEFAULT_GROUP
+
+###
 GET http://localhost:8080/api/nacos/services?namespaceId=da536c77-40f2-48e0-b475-8da7b2fd0cdd
 
 ###
-GET http://localhost:8080/api/nacos/instances?namespaceId=da536c77-40f2-48e0-b475-8da7b2fd0cdd&serviceName=video-file&groupName=DEFAULT_GROUP
+GET http://localhost:8080/api/nacos/instances?namespaceId=da536c77-40f2-48e0-b475-8da7b2fd0cdd&serviceName=video-file&
+    groupName=DEFAULT_GROUP
 
 ###
-GET http://localhost:8080/api/nacos/instances?namespace=da536c77-40f2-48e0-b475-8da7b2fd0cdd&serviceName=video-file&groupName=DEFAULT_GROUP
+GET http://localhost:8080/api/nacos/instances?namespace=da536c77-40f2-48e0-b475-8da7b2fd0cdd&serviceName=video-file&
+    groupName=DEFAULT_GROUP
 
 ###
 POST http://localhost:8080/api/k8s/login
@@ -33,7 +39,7 @@ GET http://localhost:8080/api/k8s/namespaces
 GET http://localhost:8080/api/k8s/namespaces/video-platform/deployments
 
 ###
-GET http://localhost:8080/api/k8s/namespaces/video-platform/deployments/common-web/pods
+GET http://localhost:8080/api/k8s/namespaces/video-platform/deployments/video-file/pods
 
 ###
 POST http://localhost:8080/api/k8s/exec
@@ -79,3 +85,18 @@ Content-Type: application/json
   "queryType": "get",
   "key": "connectUrl:synAnalysisTask"
 }
+
+###
+GET http://localhost:8080/api/deployment-log-path?k8s_namespace=comp&k8s_deployment=comp-private-ofs
+
+###
+GET http://localhost:8080/api/mappings/k8s-nacos?k8sNamespace=video-platform&k8sDeployment=tower-log1
+
+###
+GET http://localhost:8080/api/mappings/k8s-nacos-service?k8sNamespace=video-platform&k8sDeployment=video-bdm
+
+###
+GET http://localhost:8080/api/configs/nodeserver
+
+###
+WEBSOCKET ws://localhost:28402/ws/log-stream1?namespace=test&podName=test&logPath=test

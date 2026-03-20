@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"node-server/internal/domain"
 	"node-server/internal/usecase"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -27,6 +28,94 @@ func (h *Handler) RegisterRoutes(router *gin.Engine) {
 	router.POST("/start-log-stream", h.handleStartLogStream)
 	router.GET("/ws/log-stream", h.handleLogStreamWebSocket)
 	router.GET("/log-stream-processes", h.handleGetLogStreamProcesses)
+	router.POST("/start-log-stream1", h.handleStartLogStream1)
+	router.GET("/ws/log-stream1", h.handleLogStream1)
+}
+
+func (h *Handler) handleLogStream1(c *gin.Context) {
+	namespace := c.Query("namespace")
+	podName := c.Query("podName")
+	logPath := c.Query("logPath")
+	container := c.Query("container")
+
+	if namespace == "" || podName == "" || logPath == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace, podName and logPath are required"})
+		return
+	}
+
+	// 升级 HTTP 连接为 WebSocket
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Printf("WebSocket upgrade failed: %v", err)
+		return
+	}
+	defer conn.Close()
+
+	log.Printf("WebSocket connection established for %s/%s, log path: %s", namespace, podName, logPath)
+
+	// 创建停止信号通道
+	stopChan := make(chan struct{})
+
+	// 启动 goroutine 处理客户端消息（如关闭信号）
+	go func() {
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				// 客户端断开连接或出错
+				close(stopChan)
+				return
+			}
+		}
+	}()
+
+	// 发送消息函数
+	sendMessage := func(message string) error {
+		return conn.WriteMessage(websocket.TextMessage, []byte(message))
+	}
+
+	// 开始日志流传输
+	req := domain.LogStreamWebSocketRequest{
+		Namespace: namespace,
+		PodName:   podName,
+		LogPath:   logPath,
+	}
+	if container != "" {
+		req.Container = container
+	}
+
+	//if err := h.logStreamUseCase.StreamLogsToWebSocket(req, sendMessage, stopChan); err != nil {
+	//	log.Printf("Log stream error: %v", err)
+	//	conn.WriteMessage(websocket.TextMessage, []byte("[ERROR] "+err.Error()))
+	//}
+	for {
+		time.Sleep(1 * time.Second)
+		sendMessage("hello world")
+	}
+
+	// WebSocket 连接断开，停止对应的日志流进程
+	log.Printf("WebSocket connection closed for %s/%s, stopping log stream process", namespace, podName)
+	if err := h.logStreamUseCase.StopLogStream(namespace, podName); err != nil {
+		log.Printf("Failed to stop log stream for %s/%s: %v", namespace, podName, err)
+	} else {
+		log.Printf("Log stream process for %s/%s stopped successfully", namespace, podName)
+	}
+}
+
+func (h *Handler) handleStartLogStream1(c *gin.Context) {
+	var req domain.StartLogStreamRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, domain.StartLogStreamResponse{
+			Success: false,
+			Message: "请求参数错误: " + err.Error(),
+		})
+		return
+	}
+	var resp = struct {
+		Success   bool   `json:"success,omitempty"`
+		Message   string `json:"message"`
+		ProcessID string `json:"processId,omitempty"` // 进程 ID
+	}{Success: true, Message: "OK", ProcessID: "1"}
+	c.JSON(http.StatusOK, resp)
 }
 
 func (h *Handler) handleStartLogStream(c *gin.Context) {
