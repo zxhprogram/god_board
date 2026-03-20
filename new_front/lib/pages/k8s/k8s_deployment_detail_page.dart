@@ -448,7 +448,6 @@ class _K8sDeploymentDetailPage extends State<K8sDeploymentDetailPage> {
       final ws = WebSocketChannel.connect(Uri.parse(logStreamResponse.wsUrl!));
       ws.stream.listen(
         (message) {
-          logger.i(message);
           _buffer.add(message.toString());
           if (_buffer.length >= _bufferSizeThreshold) {
             final linesToWrite = List<String>.from(_buffer);

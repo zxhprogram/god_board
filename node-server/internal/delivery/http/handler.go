@@ -1,10 +1,13 @@
 package http
 
 import (
+	"bufio"
+	"fmt"
 	"log"
 	"net/http"
 	"node-server/internal/domain"
 	"node-server/internal/usecase"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -63,6 +66,7 @@ func (h *Handler) handleLogStream1(c *gin.Context) {
 			if err != nil {
 				// 客户端断开连接或出错
 				close(stopChan)
+				fmt.Printf("WebSocket connection closed: %v", err)
 				return
 			}
 		}
@@ -87,7 +91,12 @@ func (h *Handler) handleLogStream1(c *gin.Context) {
 	//	log.Printf("Log stream error: %v", err)
 	//	conn.WriteMessage(websocket.TextMessage, []byte("[ERROR] "+err.Error()))
 	//}
+	isOk := false
 	for {
+		if !isOk {
+			s("C:\\Users\\zxh\\Downloads\\outdata.log", sendMessage)
+			isOk = true
+		}
 		time.Sleep(1 * time.Second)
 		sendMessage("hello world")
 	}
@@ -99,6 +108,53 @@ func (h *Handler) handleLogStream1(c *gin.Context) {
 	} else {
 		log.Printf("Log stream process for %s/%s stopped successfully", namespace, podName)
 	}
+}
+
+func s(localLogPath string, sendMessage func(message string) error) {
+	file, err := os.Open(localLogPath)
+	if err != nil {
+		fmt.Printf("Failed to open log file: %v", err)
+	}
+	defer file.Close()
+
+	// 使用更大的缓冲区（1MB），避免超长行导致 scanner 失败
+	const maxCapacity = 1024 * 1024 // 1MB
+	buf := make([]byte, maxCapacity)
+
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(buf, maxCapacity)
+
+	lineCount := 0
+	ticker := time.NewTicker(10 * time.Microsecond) // 限流：每 10ms 发送一行
+	defer ticker.Stop()
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// 限流等待
+		<-ticker.C
+
+		if err := sendMessage(line); err != nil {
+			fmt.Printf("Failed to send log message: %v", err)
+		}
+		lineCount++
+
+		// 每 1000 行打印一次进度
+		if lineCount%1000 == 0 {
+			fmt.Printf("[INFO] 已发送 %d 行日志...\n", lineCount)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Failed to scan log file: %v", err)
+	}
+
+	// 发送分隔线，表示全量日志结束
+	separator := fmt.Sprintf("\n--- 全量日志结束（共 %d 行），开始实时日志流 ---\n", lineCount)
+	if err := sendMessage(separator); err != nil {
+		fmt.Printf("Failed to send log message: %v", err)
+	}
+	fmt.Print(separator)
 }
 
 func (h *Handler) handleStartLogStream1(c *gin.Context) {
