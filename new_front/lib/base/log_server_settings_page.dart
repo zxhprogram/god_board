@@ -11,6 +11,18 @@ class LogServerSettingsPage extends StatefulWidget {
 
 class _LogServerSettingsPage extends State<LogServerSettingsPage> {
   final _addressKey = const TextFieldKey('address');
+  final _addressController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  void _fetchData() async {
+    var r = await getConfigs();
+    _addressController.text = r.data?.nacos?.address ?? '';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +45,10 @@ class _LogServerSettingsPage extends State<LogServerSettingsPage> {
                   key: _addressKey,
                   label: const Text('日志服务器地址'),
                   // validator: const HttpValidator(),
-                  child: const TextField(initialValue: ''),
+                  child: TextField(
+                    controller: _addressController,
+                    initialValue: '',
+                  ),
                 ),
               ],
             ).gap(4),
