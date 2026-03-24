@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'package:dio/dio.dart';
 import 'package:new_front/base/validator/http_validator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
@@ -15,6 +12,23 @@ class _SettingsPageState extends State<SettingsPage> {
   final _addressKey = const TextFieldKey('address');
   final _nameKey = const TextFieldKey('name');
   final _passwordKey = const TextFieldKey('password');
+
+  final _addressController = TextEditingController();
+  final _k8sUsernameController = TextEditingController();
+  final _k8sPasswordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  void _fetchData() async {
+    var r = await getConfigs();
+    _addressController.text = r.data?.k8s?.address ?? '';
+    _k8sUsernameController.text = r.data?.k8s?.username ?? '';
+    _k8sPasswordController.text = r.data?.k8s?.password ?? '';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,19 +57,19 @@ class _SettingsPageState extends State<SettingsPage> {
                   key: _addressKey,
                   label: const Text('K8S服务器地址'),
                   validator: const HttpValidator(),
-                  child: const TextField(initialValue: ''),
+                  child: TextField(controller: _addressController),
                 ),
                 FormField<String>(
                   key: _nameKey,
                   label: const Text('K8S服务器用户名'),
                   validator: const NonNullValidator(),
-                  child: const TextField(initialValue: ''),
+                  child: TextField(controller: _k8sUsernameController),
                 ),
                 FormField<String>(
                   key: _passwordKey,
                   label: const Text('K8S服务器密码'),
                   validator: const NonNullValidator(),
-                  child: const TextField(initialValue: ''),
+                  child: TextField(controller: _k8sPasswordController),
                 ),
               ],
             ).gap(4),

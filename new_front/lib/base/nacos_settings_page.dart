@@ -13,6 +13,23 @@ class _NacosSettingsPage extends State<NacosSettingsPage> {
   final _nameKey = const TextFieldKey('name');
   final _passwordKey = const TextFieldKey('password');
 
+  final _addressController = TextEditingController();
+  final _NacosUsernameController = TextEditingController();
+  final _NacosPasswordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  void _fetchData() async {
+    var r = await getConfigs();
+    _addressController.text = r.data?.nacos?.address ?? '';
+    _NacosUsernameController.text = r.data?.nacos?.username ?? '';
+    _NacosPasswordController.text = r.data?.nacos?.password ?? '';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -40,19 +57,19 @@ class _NacosSettingsPage extends State<NacosSettingsPage> {
                   key: _addressKey,
                   label: const Text('Nacos服务器地址'),
                   validator: const HttpValidator(),
-                  child: const TextField(initialValue: ''),
+                  child: TextField(controller: _addressController),
                 ),
                 FormField<String>(
                   key: _nameKey,
                   label: const Text('Nacos服务器用户名'),
                   validator: const NonNullValidator(),
-                  child: const TextField(initialValue: ''),
+                  child: TextField(controller: _NacosUsernameController),
                 ),
                 FormField<String>(
                   key: _passwordKey,
                   label: const Text('Nacos服务器密码'),
                   validator: const NonNullValidator(),
-                  child: const TextField(initialValue: ''),
+                  child: TextField(controller: _NacosPasswordController),
                 ),
               ],
             ).gap(4),
@@ -71,4 +88,3 @@ class _NacosSettingsPage extends State<NacosSettingsPage> {
     );
   }
 }
-
