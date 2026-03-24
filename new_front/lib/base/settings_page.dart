@@ -4,6 +4,8 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import '../service/config_service.dart';
 
 class SettingsPage extends StatefulWidget {
+  const SettingsPage({super.key});
+
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }

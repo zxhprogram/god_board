@@ -100,6 +100,13 @@ class _ShellLayoutState extends State<ShellLayout> {
                               ),
                               MenuButton(
                                 leading: const Icon(Icons.settings),
+                                child: const Text('redis服务器配置'),
+                                onPressed: (ctx) {
+                                  context.go('/redisSettings');
+                                },
+                              ),
+                              MenuButton(
+                                leading: const Icon(Icons.settings),
                                 child: const Text('Newland Gateway'),
                                 onPressed: (ctx) {
                                   context.go('/newland-gateway');

@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:new_front/base/log_server_settings_page.dart';
 import 'package:new_front/base/nacos_settings_page.dart';
+import 'package:new_front/base/redis_settings_page.dart';
 import 'package:new_front/base/settings_page.dart';
 import 'package:new_front/base/shell_layout.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -27,6 +28,10 @@ final GoRouter router = GoRouter(
         GoRoute(
           path: '/logServerSettings',
           builder: (context, state) => LogServerSettingsPage(),
+        ),
+        GoRoute(
+          path: '/redisSettings',
+          builder: (context, state) => RedisSettingsPage(),
         ),
         ShellRoute(
           builder: (context, state, child) => Column(
